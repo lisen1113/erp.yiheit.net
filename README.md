@@ -1,6 +1,6 @@
 # 上海以和 Business ERP
 
-依据 docs/ 中 V2.2 冻结规格书及根目录 AGENTS.md。当前仅实现 T001 初始化 monorepo。
+依据 docs/ 中 V2.2 冻结规格书及根目录 AGENTS.md。当前包含 T001 初始化 monorepo 与 T002 本地 Docker 开发环境。
 
 ## 环境
 
@@ -22,3 +22,5 @@ pnpm contracts:check
 修改 API 后运行 `pnpm contracts:generate` 并提交 OpenAPI 和生成类型。金额业务尚未实现；后续必须使用 Decimal，不得使用 float。
 
 每次任务指令应列出任务编号、引用章节、允许修改目录、完成标准。每批 1–3 个相关任务，通过检查和人工审查后再进入下一批。
+
+本地容器开发环境见 [Docker Compose 使用说明](infra/README.md)。
