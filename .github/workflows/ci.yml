@@ -47,6 +47,8 @@ jobs:
         with:
           version: '0.13.9'
       - run: uv sync --frozen --all-packages
+      - name: Audit locked Python dependencies
+        run: uv audit --locked
       - name: Start isolated PostgreSQL 16
         run: |
           export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
@@ -57,7 +59,7 @@ jobs:
           host=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$container")
           echo "POSTGRES_HOST=$host" >> "$GITHUB_ENV"
       - name: Verify empty database, rollback, re-upgrade and database contracts
-        run: uv run --frozen pytest -v -s apps/api/integration/test_postgres_migrations.py
+        run: uv run --frozen pytest -v -s apps/api/integration/test_postgres_migrations.py apps/api/integration/test_authentication.py --tb=short
       - name: Verify Alembic from the Compose API image
         run: |
           docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f infra/compose.migrations.yaml run --rm --no-deps --build api alembic check

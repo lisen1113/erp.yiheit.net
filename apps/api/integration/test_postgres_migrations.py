@@ -15,6 +15,15 @@ from sqlalchemy.schema import CreateTable
 from yihe_api.db.models import AMOUNT, QUANTITY, TAX_RATE, UNIT_COST, Company, CompanyScopeMixin
 from yihe_api.db.session import DatabaseSettings, make_engine, make_session_factory
 
+HEAD_TABLES = [
+    "alembic_version",
+    "app_user",
+    "auth_login_challenge",
+    "auth_refresh_grant",
+    "auth_session",
+    "company",
+    "employee",
+]
 CONFIG = Path(__file__).resolve().parents[1] / "alembic.ini"
 
 
@@ -40,13 +49,16 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert inspect(engine).get_table_names() == ["alembic_version", "company"]
+        assert inspect(engine).get_table_names() == HEAD_TABLES
         alembic("downgrade", "-1")
-        assert inspect(engine).get_table_names() == ["alembic_version"]
-        with engine.connect() as connection:
-            assert connection.scalar(text("SELECT count(*) FROM alembic_version")) == 0
-        alembic("upgrade", "head")
         assert inspect(engine).get_table_names() == ["alembic_version", "company"]
+        with engine.connect() as connection:
+            assert (
+                connection.scalar(text("SELECT version_num FROM alembic_version"))
+                == "0001_company_baseline"
+            )
+        alembic("upgrade", "head")
+        assert inspect(engine).get_table_names() == HEAD_TABLES
         alembic("check")
         yield engine
     finally:
@@ -56,7 +68,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0001_company_baseline"
+            "0002_auth_identity"
         )
 
 

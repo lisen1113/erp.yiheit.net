@@ -26,6 +26,11 @@ class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     HTTP_ERROR = "HTTP_ERROR"
+    AUTH_INVALID_CREDENTIALS = "AUTH_INVALID_CREDENTIALS"
+    AUTH_INVALID_MFA = "AUTH_INVALID_MFA"
+    AUTH_ORIGIN_REJECTED = "AUTH_ORIGIN_REJECTED"
+    AUTH_REFRESH_REUSED = "AUTH_REFRESH_REUSED"
+    AUTH_PASSWORD_POLICY = "AUTH_PASSWORD_POLICY"
 
 
 ERRORS = {
@@ -40,12 +45,18 @@ ERRORS = {
     ErrorCode.VALIDATION_ERROR: (422, "请检查填写的字段。"),
     ErrorCode.INTERNAL_ERROR: (500, "系统暂时无法处理此请求，请稍后重试。"),
     ErrorCode.HTTP_ERROR: (400, "请求未能完成。"),
+    ErrorCode.AUTH_INVALID_CREDENTIALS: (401, "用户名或密码错误。"),
+    ErrorCode.AUTH_INVALID_MFA: (401, "验证码无效，请重试。"),
+    ErrorCode.AUTH_ORIGIN_REJECTED: (403, "请求来源不受信任。"),
+    ErrorCode.AUTH_REFRESH_REUSED: (401, "发现已轮换的凭据被重用，请重新登录。"),
+    ErrorCode.AUTH_PASSWORD_POLICY: (422, "新密码不符合账户密码规则。"),
 }
 
 HTTP_CODES = {
     status: code
     for code, (status, _) in ERRORS.items()
-    if code
+    if not code.name.startswith("AUTH_")
+    and code
     not in {ErrorCode.VERSION_CONFLICT, ErrorCode.IDEMPOTENCY_CONFLICT, ErrorCode.HTTP_ERROR}
 }
 
