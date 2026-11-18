@@ -1,8 +1,10 @@
 from alembic import context
 from sqlalchemy.pool import NullPool
+from yihe_api.auth import models as auth_models
 from yihe_api.db.models import Base
 from yihe_api.db.session import DatabaseSettings, make_engine
 
+assert auth_models.Employee.metadata is Base.metadata
 settings = DatabaseSettings.from_environment()
 
 if context.is_offline_mode():

@@ -8,7 +8,7 @@ from types import TracebackType
 
 from yihe_api.tracing import trace_context
 
-EVENTS = frozenset({"request.complete", "request.exception"})
+EVENTS = frozenset({"request.complete", "request.exception", "auth.login_failure"})
 METHODS = frozenset(
     {"GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE", "CONNECT"}
 )
@@ -54,6 +54,9 @@ class RequestJsonFormatter(logging.Formatter):
             "status_code": context.status_code if context else None,
             "duration_ms": context.duration_ms if context else None,
         }
+        if event == "auth.login_failure":
+            data["client_ip"] = getattr(record, "client_ip", None)
+            data["user_agent_digest"] = getattr(record, "agent_digest", None)
         if record.exc_info and record.exc_info[1]:
             data["exception_stack"] = stack_frames(record.exc_info[1], record.exc_info[2])
         return json.dumps(data, ensure_ascii=False)
