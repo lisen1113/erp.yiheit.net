@@ -1,0 +1,15 @@
+.git
+.tools
+.venv
+**/node_modules
+**/.next
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+docs
+migration
+dist
