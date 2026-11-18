@@ -144,7 +144,7 @@ def test_unknown_username_wrong_password_lockout_and_reset(identity, monkeypatch
 
 def test_mfa_then_rotation_then_logout_and_secrets(identity, monkeypatch, capfd):
     client, user_id, credentials = identity
-    now = datetime.now(UTC)
+    now = datetime.now(UTC) - timedelta(seconds=60)
     monkeypatch.setattr(auth, "now_utc", lambda: now)
     with auth.session_factory().begin() as db:
         db.get(User, user_id).mfa_required = True
@@ -261,3 +261,15 @@ def test_cookie_endpoint_rejects_cross_origin_and_untrusted_host(identity, path)
         response = client.post(BASE + path, json={}, headers=headers)
         assert response.status_code == 403
         assert response.json()["code"] == "AUTH_ORIGIN_REJECTED"
+
+
+def test_disabled_account_cannot_refresh_or_use_access(identity):
+    client, user_id, credentials = identity
+    signed = login(client, credentials)
+    access = signed.json()["access_token"]
+    refresh = cookie(signed)
+    with auth.session_factory().begin() as db:
+        db.get(User, user_id).status = "disabled"
+    assert post(client, "/refresh", refresh=refresh).status_code == 401
+    denied = client.get(BASE + "/me", headers={"Authorization": f"Bearer {access}"})
+    assert denied.status_code == 401

@@ -49,7 +49,7 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert inspect(engine).get_table_names() == HEAD_TABLES
+        assert sorted(inspect(engine).get_table_names()) == HEAD_TABLES
         alembic("downgrade", "-1")
         assert inspect(engine).get_table_names() == ["alembic_version", "company"]
         with engine.connect() as connection:
@@ -58,7 +58,7 @@ def migrated_engine():
                 == "0001_company_baseline"
             )
         alembic("upgrade", "head")
-        assert inspect(engine).get_table_names() == HEAD_TABLES
+        assert sorted(inspect(engine).get_table_names()) == HEAD_TABLES
         alembic("check")
         yield engine
     finally:
