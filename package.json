@@ -1,0 +1,12 @@
+{
+  "name": "yihe-erp", "private": true, "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "lint": "pnpm -r lint && uv run ruff check . && uv run ruff format --check . && uv run mypy apps/api/src",
+    "test": "pnpm -r test && uv run pytest",
+    "build": "pnpm -r build && uv build --package yihe-erp-api",
+    "contracts:generate": "uv run python scripts/export_openapi.py && pnpm --filter @yihe/contracts generate",
+    "contracts:check": "pnpm contracts:generate && git diff --exit-code -- packages/contracts/openapi.json packages/contracts/src/api.d.ts"
+  }
+}

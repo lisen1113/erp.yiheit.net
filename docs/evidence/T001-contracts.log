@@ -1,0 +1,5 @@
+$ uv run python scripts/export_openapi.py && pnpm --filter @yihe/contracts generate
+$ openapi-typescript openapi.json -o src/api.d.ts
+✨ openapi-typescript 7.10.1
+🚀 openapi.json → src/api.d.ts [32.5ms]
+PASS: OpenAPI and generated types are deterministic

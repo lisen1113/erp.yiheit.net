@@ -1,0 +1,30 @@
+[project]
+name = "yihe-erp"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[tool.uv.workspace]
+members = ["apps/api"]
+
+[dependency-groups]
+dev = ["yihe-erp-api", "ruff>=0.14,<0.15", "mypy>=1.18,<2", "pytest>=8,<10", "httpx>=0.28,<0.29"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["apps/api/tests"]
+pythonpath = ["apps/api/src"]
+
+[tool.uv.sources]
+yihe-erp-api = { workspace = true }

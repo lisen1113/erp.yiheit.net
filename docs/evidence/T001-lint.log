@@ -1,0 +1,7 @@
+$ pnpm -r lint && uv run ruff check . && uv run ruff format --check . && uv run mypy apps/api/src
+Scope: 2 of 3 workspace projects
+$ tsc --noEmit
+$ eslint . && tsc --noEmit
+All checks passed!
+4 files already formatted
+Success: no issues found in 2 source files
