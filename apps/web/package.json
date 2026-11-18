@@ -1,0 +1,6 @@
+{
+  "name": "@yihe/web", "version": "0.1.0", "private": true,
+  "scripts": {"dev":"next dev", "lint":"eslint . && tsc --noEmit", "test":"vitest run", "build":"next build", "start":"next start"},
+  "dependencies": {"@yihe/contracts":"workspace:*", "next":"16.4.6", "react":"19.2.3", "react-dom":"19.2.3", "antd":"5.29.3"},
+  "devDependencies": {"typescript":"5.9.3", "@types/node":"22.19.7", "@types/react":"19.2.10", "@types/react-dom":"19.2.3", "eslint":"9.39.2", "eslint-config-next":"16.4.6", "vitest":"4.0.18", "@testing-library/react":"16.3.2", "jsdom":"27.4.0"}
+}

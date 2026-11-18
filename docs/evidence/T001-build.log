@@ -1,0 +1,27 @@
+$ pnpm -r build && uv build --package yihe-erp-api
+Scope: 2 of 3 workspace projects
+$ tsc --noEmit
+$ next build
+▲ Next.js 16.4.6 (Turbopack)
+✓ Running next.config took 129ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 16.5s
+  Running TypeScript ...
+  Finished TypeScript in 12.0s ...
+  Collecting page data using 4 workers ...
+  Generating static pages using 4 workers (0/3) ...
+✓ Generating static pages using 4 workers (3/3) in 1050ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+└ ○ /_not-found
+
+
+○  (Static)  prerendered as static content
+
+Building source distribution...
+Building wheel from source distribution...
+Successfully built dist\yihe_erp_api-0.1.0.tar.gz
+Successfully built dist\yihe_erp_api-0.1.0-py3-none-any.whl

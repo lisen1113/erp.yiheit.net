@@ -1,0 +1,11 @@
+{
+  "name": "@yihe/contracts", "version": "0.1.0", "private": true,
+  "types": "src/api.d.ts",
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/api.d.ts",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit"
+  },
+  "devDependencies": { "openapi-typescript": "7.10.1", "typescript": "5.9.3", "vitest": "4.0.18" }
+}
