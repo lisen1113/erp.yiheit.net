@@ -9,4 +9,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 WORKDIR /app/apps/api
 USER 10001
 EXPOSE 8000
-CMD ["uvicorn", "yihe_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "yihe_api.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
