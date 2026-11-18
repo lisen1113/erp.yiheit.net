@@ -5,13 +5,26 @@ from typing import Literal
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-app = FastAPI(title="上海以和 ERP API", version="0.1.0")
+from yihe_api.errors import ERROR_RESPONSES, TRACE_HEADERS, install_error_handlers
+from yihe_api.request_logs import configure_api_logging
+from yihe_api.request_middleware import RequestTraceMiddleware
+
+configure_api_logging()
+app = FastAPI(title="上海以和 ERP API", version="0.1.0", responses=ERROR_RESPONSES)
+app.add_middleware(RequestTraceMiddleware)
+install_error_handlers(app)
 
 
 class HealthResponse(BaseModel):
     status: Literal["ok"]
 
 
-@app.get("/health", response_model=HealthResponse, operation_id="getHealth", tags=["system"])
+@app.get(
+    "/health",
+    response_model=HealthResponse,
+    operation_id="getHealth",
+    tags=["system"],
+    responses={200: {"headers": TRACE_HEADERS}},
+)
 def health() -> HealthResponse:
     return HealthResponse(status="ok")
