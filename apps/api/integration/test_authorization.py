@@ -327,6 +327,17 @@ def test_bootstrap_mfa_repeated_bootstrap_and_no_self_escalation(auth_env):
             create_user(db, company_id, username=username.lower())
         roles = client.get(BASE + "/roles", headers=headers)
         assert roles.status_code == 200 and len(roles.json()) == 8
+        warehouse = next(role for role in roles.json() if role["code"] == "WAREHOUSE")
+        patch = {
+            key: warehouse[key]
+            for key in ("name", "description", "data_scope", "is_active", "version_no")
+        }
+        changed = client.patch(
+            f"{BASE}/roles/{warehouse['id']}",
+            headers=headers,
+            json={**patch, "requires_mfa": True},
+        )
+        assert changed.status_code == 200 and changed.json()["requires_mfa"] is True
         denied = client.post(
             f"{BASE}/users/{user_id}/roles",
             headers=headers,

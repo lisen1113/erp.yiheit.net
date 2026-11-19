@@ -109,7 +109,13 @@ def version_matches(current: int, requested: int) -> None:
         raise ApiError(ErrorCode.VERSION_CONFLICT)
 
 
-def reject_role_self_edit(db: Session, principal: Principal, role: Role) -> None:
+def reject_role_self_edit(
+    db: Session,
+    principal: Principal,
+    role: Role,
+    *,
+    mfa_update: bool = False,
+) -> None:
     membership = db.scalar(
         select(UserRole.id)
         .where(
@@ -119,7 +125,7 @@ def reject_role_self_edit(db: Session, principal: Principal, role: Role) -> None
         )
         .limit(1)
     )
-    if role.is_system or membership is not None:
+    if membership is not None or (role.is_system and not mfa_update):
         raise ApiError(ErrorCode.FORBIDDEN)
 
 
@@ -373,9 +379,22 @@ def create_role(payload: RoleCreate, request: Request, db: DB) -> RoleView:
 def patch_role(id: UUID, payload: RolePatch, request: Request, db: DB) -> RoleView:
     principal = locked_principal(request, db, ROLE_MANAGE)
     role = target_role(db, principal, id)
-    reject_role_self_edit(db, principal, role)
+    reject_role_self_edit(db, principal, role, mfa_update=True)
     version_matches(role.version_no, payload.version_no)
-    check_delegation(principal, role_permissions(db, role))
+    if role.is_system:
+        unchanged_template = (
+            payload.name == role.name
+            and payload.description == role.description
+            and payload.data_scope.lower() == role.data_scope
+            and payload.is_active == role.is_active
+        )
+        mandatory_mfa = SYSTEM_ROLES[role.code][2]
+        if not unchanged_template or (mandatory_mfa and not payload.requires_mfa):
+            raise ApiError(ErrorCode.FORBIDDEN)
+        if not payload.requires_mfa:
+            check_delegation(principal, role_permissions(db, role))
+    else:
+        check_delegation(principal, role_permissions(db, role))
     role.name = payload.name
     role.description = payload.description
     role.data_scope = payload.data_scope.lower()

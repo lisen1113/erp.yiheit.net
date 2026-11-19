@@ -155,9 +155,8 @@ def principal_for(db: Session, user: User, session: AuthSession, now: datetime) 
         result.role_ids.add(role_id)
         if code is None:
             continue
-        if (requires_mfa or sensitivity == "high") and not (
-            user.mfa_enabled and session.mfa_verified
-        ):
+        needs_mfa = requires_mfa or sensitivity == "high" or code in HIGH_PERMISSIONS
+        if needs_mfa and not (user.mfa_enabled and session.mfa_verified):
             result.blocked.add(code)
             continue
         result.grants.setdefault(code, set()).add(Scope(scope.upper()))
