@@ -12,7 +12,7 @@ from uuid import UUID
 import jwt
 import pyotp
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from yihe_api.auth.csrf import allows_cookie_request
@@ -179,6 +179,7 @@ def begin_session(db: Session, user: User, response: Response, now: datetime) ->
         company_id=user.company_id,
         user_id=user.id,
         expires_at=now + timedelta(seconds=SESSION_SECONDS),
+        mfa_verified=user.mfa_enabled,
     )
     db.add(session)
     db.flush()
@@ -186,7 +187,7 @@ def begin_session(db: Session, user: User, response: Response, now: datetime) ->
     return access(user, session, now)
 
 
-def authenticated(request: Request, db: Session) -> tuple[User, AuthSession]:
+def authenticated(request: Request, db: Session, *, lock: bool = True) -> tuple[User, AuthSession]:
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
     if scheme.lower() != "bearer" or not token or len(token) > 4096:
@@ -217,8 +218,8 @@ def authenticated(request: Request, db: Session) -> tuple[User, AuthSession]:
             raise ValueError
     except (jwt.InvalidTokenError, ValueError, TypeError, AttributeError):
         raise ApiError(ErrorCode.UNAUTHENTICATED) from None
-    user = locked_user(db, user_id)
-    session = db.get(AuthSession, session_id, with_for_update=True)
+    user = db.get(User, user_id, with_for_update=lock, populate_existing=True)
+    session = db.get(AuthSession, session_id, with_for_update=lock, populate_existing=True)
     now = now_utc()
     if (
         user is None
@@ -254,7 +255,11 @@ def challenge_user(db: Session, token: str, now: datetime) -> tuple[User, LoginC
 def login(payload: Login, request: Request, response: Response, db: DB) -> Access | Challenge:
     auth_config()
     now = now_utc()
-    user = db.scalar(select(User).where(User.username == payload.username).with_for_update())
+    user = db.scalar(
+        select(User)
+        .where(User.username_normalized == func.lower(payload.username))
+        .with_for_update()
+    )
     password = payload.password.get_secret_value()
     usable = user is not None and available(db, user, now)
     encoded = user.password_hash if user is not None and usable else dummy_hash()

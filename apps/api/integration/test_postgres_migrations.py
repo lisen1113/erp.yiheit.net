@@ -15,7 +15,7 @@ from sqlalchemy.schema import CreateTable
 from yihe_api.db.models import AMOUNT, QUANTITY, TAX_RATE, UNIT_COST, Company, CompanyScopeMixin
 from yihe_api.db.session import DatabaseSettings, make_engine, make_session_factory
 
-HEAD_TABLES = [
+AUTH_TABLES = [
     "alembic_version",
     "app_user",
     "auth_login_challenge",
@@ -49,16 +49,20 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == HEAD_TABLES
+        assert sorted(inspect(engine).get_table_names()) == sorted(
+            [*AUTH_TABLES, "permission", "role", "role_permission", "user_role"]
+        )
         alembic("downgrade", "-1")
-        assert inspect(engine).get_table_names() == ["alembic_version", "company"]
+        assert sorted(inspect(engine).get_table_names()) == AUTH_TABLES
         with engine.connect() as connection:
             assert (
                 connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == "0001_company_baseline"
+                == "0002_auth_identity"
             )
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == HEAD_TABLES
+        assert sorted(inspect(engine).get_table_names()) == sorted(
+            [*AUTH_TABLES, "permission", "role", "role_permission", "user_role"]
+        )
         alembic("check")
         yield engine
     finally:
@@ -67,9 +71,7 @@ def migrated_engine():
 
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0002_auth_identity"
-        )
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == ("0003_rbac")
 
 
 def test_company_uuid_audit_utc_and_optimistic_version(migrated_engine) -> None:

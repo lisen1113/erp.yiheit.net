@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from yihe_api.auth.router import router as auth_router
 from yihe_api.errors import ERROR_RESPONSES, TRACE_HEADERS, install_error_handlers
+from yihe_api.rbac.router import router as rbac_router
 from yihe_api.request_logs import configure_api_logging
 from yihe_api.request_middleware import RequestTraceMiddleware
 
@@ -17,6 +18,8 @@ install_error_handlers(app)
 app.include_router(auth_router, prefix="/api/v1/auth")
 # The development proxy strips the initial /api segment.
 app.include_router(auth_router, prefix="/v1/auth", include_in_schema=False)
+app.include_router(rbac_router, prefix="/api/v1")
+app.include_router(rbac_router, prefix="/v1", include_in_schema=False)
 
 
 class HealthResponse(BaseModel):

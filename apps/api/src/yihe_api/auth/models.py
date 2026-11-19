@@ -5,6 +5,7 @@ from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
+    Computed,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -52,6 +53,9 @@ class User(IdentityMixin, CompanyScopeMixin, AuditMixin, Base):
 
     employee_id: Mapped[UUID] = mapped_column(Uuid, unique=True)
     username: Mapped[str] = mapped_column(String(100), unique=True)
+    username_normalized: Mapped[str] = mapped_column(
+        String(100), Computed("lower(username)", persisted=True), unique=True
+    )
     password_hash: Mapped[str] = mapped_column(String(255))
     status: Mapped[str] = mapped_column(String(16), server_default=text("'active'"))
     failed_login_count: Mapped[int] = mapped_column(Integer, server_default=text("0"))
@@ -84,6 +88,7 @@ class AuthSession(IdentityMixin, CompanyScopeMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    mfa_verified: Mapped[bool] = mapped_column(Boolean, server_default=false())
 
 
 class RefreshGrant(Base):
