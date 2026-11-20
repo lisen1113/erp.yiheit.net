@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from yihe_api.audit.service import Actor, Category, Source, audit_change
 from yihe_api.auth.models import Employee, User
 from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
 from yihe_api.db.models import Company
@@ -127,4 +128,14 @@ def bootstrap_admin(
         )
     )
     db.flush()
+    audit_change(
+        db,
+        company_id=company.id,
+        actor=Actor(company.id, user.id, employee.id),
+        action="rbac.bootstrap",
+        entity_type="app_user",
+        entity_id=user.id,
+        category=Category.SYSTEM_CONFIGURATION,
+        source=Source.CLI,
+    )
     return actor_id
