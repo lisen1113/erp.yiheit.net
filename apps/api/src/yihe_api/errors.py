@@ -23,6 +23,11 @@ class ErrorCode(StrEnum):
     CONFLICT = "CONFLICT"
     VERSION_CONFLICT = "VERSION_CONFLICT"
     IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
+    IDEMPOTENCY_KEY_REQUIRED = "IDEMPOTENCY_KEY_REQUIRED"
+    IDEMPOTENCY_KEY_INVALID = "IDEMPOTENCY_KEY_INVALID"
+    IDEMPOTENCY_IN_PROGRESS = "IDEMPOTENCY_IN_PROGRESS"
+    IDEMPOTENCY_REPLAY_FAILED = "IDEMPOTENCY_REPLAY_FAILED"
+    IDEMPOTENCY_RETRYABLE = "IDEMPOTENCY_RETRYABLE"
     VALIDATION_ERROR = "VALIDATION_ERROR"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     HTTP_ERROR = "HTTP_ERROR"
@@ -48,6 +53,11 @@ ERRORS = {
     ErrorCode.METHOD_NOT_ALLOWED: (405, "此资源不支持该请求方法。"),
     ErrorCode.CONFLICT: (409, "操作与当前状态冲突，请刷新后重试。"),
     ErrorCode.VERSION_CONFLICT: (409, "数据已更新，请刷新后重试。"),
+    ErrorCode.IDEMPOTENCY_KEY_REQUIRED: (422, "缺少幂等请求标识。"),
+    ErrorCode.IDEMPOTENCY_KEY_INVALID: (422, "幂等请求标识须为随机 UUIDv4。"),
+    ErrorCode.IDEMPOTENCY_IN_PROGRESS: (409, "同一操作正在处理，请稍后重试。"),
+    ErrorCode.IDEMPOTENCY_REPLAY_FAILED: (409, "无法安全重放，请联系支持核对原操作。"),
+    ErrorCode.IDEMPOTENCY_RETRYABLE: (503, "操作未提交，请使用原请求标识重试。"),
     ErrorCode.IDEMPOTENCY_CONFLICT: (409, "请求与已提交的操作冲突，请核对后重试。"),
     ErrorCode.VALIDATION_ERROR: (422, "请检查填写的字段。"),
     ErrorCode.INTERNAL_ERROR: (500, "系统暂时无法处理此请求，请稍后重试。"),
@@ -69,7 +79,7 @@ ERRORS = {
 HTTP_CODES = {
     status: code
     for code, (status, _) in ERRORS.items()
-    if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_"))
+    if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_", "IDEMPOTENCY_"))
     and code
     not in {
         ErrorCode.VERSION_CONFLICT,

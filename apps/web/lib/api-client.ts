@@ -3,6 +3,7 @@ import type { components } from "@yihe/contracts";
 type ErrorPayload = components["schemas"]["ErrorResponse"];
 type FieldError = components["schemas"]["FieldError"];
 export const TRACE_HEADER = "X-Request-ID";
+export const IDEMPOTENCY_HEADER = "Idempotency-Key";
 
 const statusMessages: Partial<Record<number, string>> = {
   401: "请登录后重试。",
@@ -39,7 +40,7 @@ function isFieldError(value: unknown): value is FieldError {
 export async function apiRequest<T>(
   path: `/api/${string}`,
   init?: RequestInit,
-): Promise<{ data: T; traceId?: string }> {
+): Promise<{ data: T; traceId?: string; replayed?: true }> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
   let response: Response;
@@ -66,6 +67,7 @@ export async function apiRequest<T>(
       ? undefined
       : await response.json()) as T,
     traceId,
+    ...(response.headers.get("Idempotency-Replayed") === "true" ? { replayed: true } : {}),
   };
 }
 
@@ -81,4 +83,22 @@ export function mapApiFields(error: ApiRequestError) {
     name: path.split(".").map((part) => /^\d+$/.test(part) ? Number(part) : part),
     errors,
   }));
+}
+
+
+type IdempotentInit = Omit<RequestInit, "method" | "body" | "signal"> & {
+  method: "POST" | "PUT" | "PATCH" | "DELETE";
+  body?: string;
+};
+
+/** New instance per business operation. Keep it in memory and call send again after a timeout. */
+export function createIdempotentOperation<T>(path: `/api/${string}`, init: IdempotentInit) {
+  const headers = new Headers(init.headers);
+  headers.set(IDEMPOTENCY_HEADER, globalThis.crypto.randomUUID());
+  const request = { ...init, headers };
+  return {
+    send(signal?: AbortSignal) {
+      return apiRequest<T>(path, { ...request, signal });
+    },
+  };
 }
