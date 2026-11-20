@@ -28,6 +28,10 @@ class Field(StrEnum):
     ITEM_COUNT = "item_count"
     ADDED_COUNT = "added_count"
     REMOVED_COUNT = "removed_count"
+    KEY_HASH = "idempotency_key_hash"
+    REQUEST_HASH = "idempotency_request_hash"
+    IDEMPOTENCY_STATUS = "idempotency_status"
+    IDEMPOTENCY_ACTION = "idempotency_action"
     ADDED = "added"
     REMOVED = "removed"
 
@@ -53,6 +57,15 @@ def permission_codes(values: Iterable[str]) -> list[str]:
 
 
 def validate(field: Field, value: object) -> AuditValue:
+    if field in {Field.KEY_HASH, Field.REQUEST_HASH} and isinstance(value, str):
+        if re.fullmatch(r"[0-9a-f]{64}", value):
+            return value
+    if field == Field.IDEMPOTENCY_ACTION and isinstance(value, str):
+        if len(value) <= 64 and re.fullmatch(r"[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,3}", value):
+            return value
+    if field == Field.IDEMPOTENCY_STATUS and isinstance(value, str):
+        if value in {"IN_PROGRESS", "COMPLETED", "FAILED_RETRYABLE", "FAILED_FINAL", "EXPIRED"}:
+            return value
     if field in BOOL_FIELDS and isinstance(value, bool):
         return value
     if field in UUID_FIELDS and isinstance(value, UUID):
