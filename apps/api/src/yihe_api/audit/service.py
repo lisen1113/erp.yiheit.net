@@ -155,7 +155,8 @@ def record_rejection(request: Request, code: ErrorCode, *, status: int) -> None:
     ):
         return
     actor = getattr(request.state, "audit_actor", None)
-    raw_host = request.headers.get("host", "").lower()
+    hosts = request.headers.getlist("host")
+    raw_host = hosts[0].lower() if len(hosts) == 1 else "<untrusted>"
     auth_origin = os.environ.get("ERP_AUTH_ORIGIN", "")
     raw_origin = request.headers.get("origin", "")
     host = (
@@ -187,8 +188,13 @@ def record_rejection(request: Request, code: ErrorCode, *, status: int) -> None:
             resolution = "AUTHENTICATED_USER" if actor else "UNKNOWN"
             if actor is None and raw_host == "erp.yiheit.net":
                 configured = os.environ.get("ERP_AUDIT_HOST_COMPANY_ID")
-                if configured:
-                    mapped = db.get(Company, UUID(configured))
+                try:
+                    mapped_id = UUID(configured) if configured else None
+                except ValueError:
+                    mapped_id = None
+                    LOGGER.error("audit.security_write_failed")
+                if mapped_id is not None:
+                    mapped = db.get(Company, mapped_id)
                     if mapped is not None and not mapped.is_deleted:
                         company_id, resolution = mapped.id, "HOST_MAPPING"
             row = SecurityEvent(
@@ -197,7 +203,7 @@ def record_rejection(request: Request, code: ErrorCode, *, status: int) -> None:
                 user_id=actor.user_id if actor else None,
                 session_id=actor.session_id if actor else None,
                 trace_id=current_trace(),
-                event_type=code.value,
+                event_type=getattr(request.state, "audit_type", code.value),
                 result="FAILURE" if status in {401, 422} else "DENIED",
                 ip_address=ip,
                 user_agent=agent,

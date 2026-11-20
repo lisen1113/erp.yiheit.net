@@ -205,6 +205,7 @@ def authenticated(request: Request, db: Session, *, lock: bool = True) -> tuple[
     header = request.headers.get("authorization", "")
     scheme, _, token = header.partition(" ")
     if scheme.lower() != "bearer" or not token or len(token) > 4096:
+        request.state.audit_type = "AUTH_TOKEN_MALFORMED"
         raise ApiError(ErrorCode.UNAUTHENTICATED)
     try:
         claims = jwt.decode(
@@ -231,6 +232,7 @@ def authenticated(request: Request, db: Session, *, lock: bool = True) -> tuple[
         if claims["user_id"] != claims["sub"]:
             raise ValueError
     except (jwt.InvalidTokenError, ValueError, TypeError, AttributeError):
+        request.state.audit_type = "AUTH_TOKEN_INVALID"
         raise ApiError(ErrorCode.UNAUTHENTICATED) from None
     user = db.get(User, user_id, with_for_update=lock, populate_existing=True)
     session = db.get(AuthSession, session_id, with_for_update=lock, populate_existing=True)

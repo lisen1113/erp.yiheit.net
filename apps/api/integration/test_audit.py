@@ -246,3 +246,64 @@ def test_role_grant_rollback_when_audit_insert_fails(identity_fixture):  # noqa:
         with session_factory().begin() as db:
             db.execute(text("DROP TRIGGER t007_force_audit_error ON audit_log"))
             db.execute(text("DROP FUNCTION t007_fail_audit()"))
+
+
+def test_login_reuse_and_sod_rejection_events(identity_fixture):  # noqa: F811
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from yihe_api.auth.router import COOKIE
+    from yihe_api.auth.security import PASSWORD_HASHER
+    from yihe_api.errors import install_error_handlers
+    from yihe_api.rbac.policy import assert_separation_of_duties
+    from yihe_api.rbac.router import Current
+    from yihe_api.request_middleware import RequestTraceMiddleware
+
+    client, company, user, _, headers = identity_fixture
+    password = token_urlsafe(24)
+    with session_factory().begin() as db:
+        account = db.get(User, user)
+        account.password_hash = PASSWORD_HASHER.hash(password)
+        username = account.username
+    logged = client.post(
+        BASE + "/auth/login",
+        json={"username": username, "password": password},
+        headers={"Origin": ORIGIN, "X-Request-ID": "audit-login-ok"},
+    )
+    assert logged.status_code == 200
+    credential = logged.cookies.get(COOKIE)
+    browser = {"Origin": ORIGIN, "Cookie": f"{COOKIE}={credential}"}
+    assert client.post(BASE + "/auth/refresh", headers=browser).status_code == 200
+    reused = client.post(
+        BASE + "/auth/refresh",
+        headers={**browser, "X-Request-ID": "audit-reuse"},
+    )
+    assert reused.status_code == 401
+
+    probe = FastAPI()
+    probe.add_middleware(RequestTraceMiddleware)
+    install_error_handlers(probe)
+
+    @probe.post("/approval-probe")
+    def approve(principal: Current) -> None:
+        maker = principal.user.id
+        assert_separation_of_duties(maker, maker, "finance.payment.approve")
+
+    with TestClient(probe, base_url=ORIGIN) as demo:
+        refused = demo.post("/approval-probe", headers={**headers, "X-Request-ID": "audit-sod"})
+        assert refused.status_code == 403
+
+    with session_factory()() as db:
+        row = db.scalar(select(AuditLog).where(AuditLog.trace_id == "audit-login-ok"))
+        assert (
+            row.action == "auth.login" and row.actor_user_id == user and row.company_id == company
+        )
+        audit = dict(
+            db.execute(
+                select(SecurityEvent.trace_id, SecurityEvent.event_type).where(
+                    SecurityEvent.trace_id.in_(["audit-reuse", "audit-sod"]),
+                )
+            ).all()
+        )
+        assert audit == {"audit-reuse": "AUTH_REFRESH_REUSED", "audit-sod": "SEPARATION_OF_DUTIES"}
+        if credential in str(row.details) or password in str(row.details):
+            pytest.fail("Authentication secret appeared in audit", pytrace=False)
