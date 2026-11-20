@@ -14,6 +14,6 @@ PostgreSQL 只存元数据。业务通过 Storage 接口签名 PUT/GET、读取�
 
 保留 UPLOADING、AVAILABLE、QUARANTINED、REJECTED、EXPIRED、INVALIDATED、DELETED_FROM_STORAGE 状态。生命周期接口仅标记已超时的未确认上传并检查清理资格。已确认、存在品牌历史或未来外部引用、法定保留的对象拒绝清理。版本桶不得设置可能清掉已绑定版本的全桶清理规则。将来业务快照应保存 file_asset_id 并在事务内检查可用性，清理前核对外部引用。丢失响应可用同一幂等 Key 重放；存储不可用先恢复连通，隔离文件由受控流程核查，不直接公开。
 
-规格要求使用用户提供的正式原图。本任务的 `uv run --frozen python scripts/seed/brand_sample.py local-test-logo.png` 仅生成醒目标记的测试图。正式资料由管理员核验和上传，不在迁移里写入真实 Logo 或公司银行信息。
+规格要求使用用户提供的正式原图。本任务的 `uv run --frozen python scripts/seed/brand_sample.py local-test-logo.png` 仅生成醒目标记的测试图。可用 `uv run --frozen python scripts/seed/brand_sample.py local-official-logo.png --from-spec "<冻结规格文件.docx>"` 提取内嵌正式横版原图。命令验证冻结 SHA-256，不修改像素。管理员核验后通过同一上传流程登记 LOGO_HORIZONTAL，不在迁移中启用真实资产。
 
 依赖 boto3 1.44.7（Apache-2.0，用于签名和版本存储）；Pillow 13.0.0（MIT-CMU，用于图片验证）。MinIO 开发容器为 AGPL-3.0，不随生产服务发布。

@@ -10,7 +10,7 @@ export async function prepareBrandUpload(file: File, authorization: string) {
     value.toString(16).padStart(2, "0")).join("");
   const payload: Schema["Upload"] = {
     asset_type: "BRAND", filename: file.name, media_type: file.type,
-    size_bytes: file.size, sha256,
+    size_bytes: file.size, sha256, sensitivity: "STANDARD",
   };
   const headers = { Authorization: authorization, "Content-Type": "application/json" };
   const request = createIdempotentOperation<Schema["Receipt"]>("/api/v1/files", {
@@ -40,4 +40,24 @@ export function changeBrandState(id: string, version: number, active: boolean, a
       headers: { Authorization: authorization, "Content-Type": "application/json" },
     },
   );
+}
+
+
+export const publicBrandLogoUrl = "/api/v1/brand-assets/public/logo";
+
+export async function fetchBrandPreview(id: string, authorization: string): Promise<Blob> {
+  const headers = { Authorization: authorization };
+  const { data: asset } = await apiRequest<Schema["FileView"]>(`/api/v1/files/${id}`, { headers });
+  if (asset.asset_type !== "BRAND" || !["image/png", "image/jpeg", "image/webp"].includes(asset.content_type)) {
+    throw new Error("此文件不是受支持的品牌预览图。");
+  }
+  const { data: ticket } = await apiRequest<Schema["Ticket"]>(`/api/v1/files/${id}/download-ticket`, {
+    method: "POST", headers,
+  });
+  if (!ticket.url.startsWith(`/api/v1/files/${id}/content?`)) {
+    throw new Error("预览地址无效。");
+  }
+  const response = await fetch(ticket.url, { headers, cache: "no-store" });
+  if (!response.ok) throw new Error("无法读取品牌预览图。");
+  return new Blob([await response.arrayBuffer()], { type: asset.content_type });
 }
