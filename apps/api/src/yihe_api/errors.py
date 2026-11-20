@@ -31,6 +31,9 @@ class ErrorCode(StrEnum):
     AUTH_ORIGIN_REJECTED = "AUTH_ORIGIN_REJECTED"
     AUTH_REFRESH_REUSED = "AUTH_REFRESH_REUSED"
     AUTH_PASSWORD_POLICY = "AUTH_PASSWORD_POLICY"
+    MFA_REQUIRED = "MFA_REQUIRED"
+    DATA_SCOPE_UNAVAILABLE = "DATA_SCOPE_UNAVAILABLE"
+    SEPARATION_OF_DUTIES = "SEPARATION_OF_DUTIES"
 
 
 ERRORS = {
@@ -50,6 +53,9 @@ ERRORS = {
     ErrorCode.AUTH_ORIGIN_REJECTED: (403, "请求来源不受信任。"),
     ErrorCode.AUTH_REFRESH_REUSED: (401, "发现已轮换的凭据被重用，请重新登录。"),
     ErrorCode.AUTH_PASSWORD_POLICY: (422, "新密码不符合账户密码规则。"),
+    ErrorCode.MFA_REQUIRED: (403, "请先启用多因素认证，再重新登录。"),
+    ErrorCode.DATA_SCOPE_UNAVAILABLE: (403, "部门数据范围尚未启用。"),
+    ErrorCode.SEPARATION_OF_DUTIES: (403, "制单人与审批人或终审人必须不同。"),
 }
 
 HTTP_CODES = {
@@ -57,7 +63,14 @@ HTTP_CODES = {
     for code, (status, _) in ERRORS.items()
     if not code.name.startswith("AUTH_")
     and code
-    not in {ErrorCode.VERSION_CONFLICT, ErrorCode.IDEMPOTENCY_CONFLICT, ErrorCode.HTTP_ERROR}
+    not in {
+        ErrorCode.VERSION_CONFLICT,
+        ErrorCode.IDEMPOTENCY_CONFLICT,
+        ErrorCode.HTTP_ERROR,
+        ErrorCode.MFA_REQUIRED,
+        ErrorCode.DATA_SCOPE_UNAVAILABLE,
+        ErrorCode.SEPARATION_OF_DUTIES,
+    }
 }
 
 TRACE_HEADERS = {
