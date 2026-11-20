@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from yihe_api.audit.models import AuditLog, SecurityEvent
 from yihe_api.auth.models import AuthSession, Employee, User
 from yihe_api.auth.router import now_utc, session_factory
 from yihe_api.auth.security import PASSWORD_HASHER, access_token, auth_config
@@ -385,6 +386,32 @@ def test_bootstrap_mfa_repeated_bootstrap_and_no_self_escalation(auth_env):
             f"{BASE}/users/{target_id}/roles/{custom}?version_no=2", headers=headers
         )
         assert revoked.status_code == 204
+        disabled = client.patch(
+            f"{BASE}/users/{target_id}",
+            headers=headers,
+            json={"version_no": 3, "status": "disabled"},
+        )
+        assert disabled.status_code == 200
+        with session_factory()() as db:
+            persisted = list(db.scalars(select(AuditLog).where(AuditLog.actor_user_id == user_id)))
+            assert {"rbac.bootstrap", "user.role.assign", "user.role.revoke", "user.status"} <= {
+                row.action for row in persisted
+            }
+            assert any(
+                row.action == "user.status"
+                and row.before_data == {"status": "active"}
+                and row.after_data == {"status": "disabled"}
+                for row in persisted
+            )
+            assert (
+                db.scalar(
+                    select(SecurityEvent.id).where(
+                        SecurityEvent.user_id == user_id,
+                        SecurityEvent.event_type == "SELF_ESCALATION_DENIED",
+                    )
+                )
+                is not None
+            )
         with pytest.raises(IntegrityError), session_factory().begin() as db:
             db.add(Permission(code=USER_VIEW, module="system", action="view", description="Dup"))
             db.flush()

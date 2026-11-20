@@ -307,3 +307,28 @@ def test_login_reuse_and_sod_rejection_events(identity_fixture):  # noqa: F811
         assert audit == {"audit-reuse": "AUTH_REFRESH_REUSED", "audit-sod": "SEPARATION_OF_DUTIES"}
         if credential in str(row.details) or password in str(row.details):
             pytest.fail("Authentication secret appeared in audit", pytrace=False)
+
+    with session_factory().begin() as db:
+        account = db.get(User, user)
+        account.mfa_enabled = True
+        for auth_session in db.scalars(
+            select(AuthSession).where(
+                AuthSession.user_id == user,
+                AuthSession.revoked_at.is_(None),
+            )
+        ):
+            auth_session.mfa_verified = True
+        grant(db, account, "system.audit.view", "company")
+    history = client.get(
+        BASE + "/audit-logs",
+        headers=headers,
+        params={
+            "actor_user_id": str(user),
+            "action": "auth.login",
+            "entity_type": "app_user",
+            "entity_id": str(user),
+            "since": "2000-01-01T00:00:00Z",
+        },
+    )
+    assert history.status_code == 200 and len(history.json()) == 1
+    assert history.json()[0]["trace_id"] == "audit-login-ok"
