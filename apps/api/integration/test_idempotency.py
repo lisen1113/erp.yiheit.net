@@ -1,5 +1,6 @@
 """HTTP-to-PostgreSQL integration, with test-only routes and transaction markers."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 from threading import Barrier, Lock
@@ -76,6 +77,8 @@ def scenario(auth_env):  # noqa: F811
                 raise RolledBackRetry
             if body.quantity == -3:
                 raise RuntimeError("synthetic handler crash")
+            if body.quantity == -4:
+                tx.commit()
             if body.quantity == 10:
                 sleep(0.6)
             return Success(
@@ -87,6 +90,7 @@ def scenario(auth_env):  # noqa: F811
         )
 
     @app.post(CREATE_PATH)
+    @app.put(CREATE_PATH)
     def create(request: Request, db: DB, body: Body):
         return operation(request, db, body, "proof.create", None)
 
@@ -138,6 +142,7 @@ def test_exact_replay_conflicts_audit_and_create_scope(scenario):
     for conflict in (
         send(client, headers, key, quantity=2),
         send(client, headers, key, path="/api/v1/proof/alternate"),
+        client.put(CREATE_PATH, headers={**headers, IDEMPOTENCY_KEY: key}, json={"quantity": 1}),
     ):
         assert conflict.status_code == 409 and conflict.json()["code"] == "IDEMPOTENCY_CONFLICT"
     with session_factory()() as db:
@@ -153,6 +158,13 @@ def test_exact_replay_conflicts_audit_and_create_scope(scenario):
         assert all(key not in str(event.details) for event in events)
     print("First: HTTP 201; replay: HTTP 201 with same receipt and Idempotency-Replayed: true")
     print("Different request: HTTP 409 IDEMPOTENCY_CONFLICT")
+    print("Initial example", json.dumps(first.json(), ensure_ascii=False))
+    print(
+        "Replay example",
+        retry.headers["Idempotency-Replayed"],
+        json.dumps(retry.json(), ensure_ascii=False),
+    )
+    print("Conflict example", json.dumps(conflict.json(), ensure_ascii=False))
 
 
 def test_scope_isolation_for_action_object_actor_company(scenario):
@@ -278,3 +290,42 @@ def test_crash_and_ambiguous_expired_claim_do_not_reexecute(scenario):
             select(IdempotencyRecord).where(IdempotencyRecord.idempotency_key == stalled)
         )
         assert row.status == "IN_PROGRESS"
+
+
+def test_handler_cannot_commit_early_and_expiry_is_a_tombstone(scenario):
+    _, client, company, _, headers, _, _, attempts = scenario
+    breach, expired = str(uuid4()), str(uuid4())
+    assert send(client, headers, breach, quantity=-4).status_code == 500
+    ok = send(client, headers, expired)
+    assert ok.status_code == 201
+    with session_factory().begin() as db:
+        row = db.scalar(
+            select(IdempotencyRecord).where(
+                IdempotencyRecord.idempotency_key == expired,
+            )
+        )
+        row.locked_at = datetime.now(UTC) - timedelta(days=9)
+        row.expires_at = datetime.now(UTC) - timedelta(days=2)
+    assert send(client, headers, expired).status_code == 409
+    assert send(client, headers, expired).status_code == 409
+    assert attempts == [-4, 1]
+    with session_factory()() as db:
+        records = list(
+            db.scalars(
+                select(IdempotencyRecord).where(
+                    IdempotencyRecord.company_id == company,
+                )
+            )
+        )
+        assert len(records) == 1
+        assert records[0].status == "EXPIRED"
+        assert records[0].response_body is None
+        effects = db.scalar(
+            select(func.count())
+            .select_from(AuditLog)
+            .where(
+                AuditLog.company_id == company,
+                AuditLog.action == "proof.committed",
+            )
+        )
+        assert effects == 1
