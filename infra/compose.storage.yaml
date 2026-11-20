@@ -1,6 +1,7 @@
 services:
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-06T17-38-46Z
+    build:
+      context: ./infra/minio
     restart: unless-stopped
     command: server /data
     environment:
@@ -13,7 +14,7 @@ services:
       - minio-data:/data
     networks: [edge]
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/ready"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:9000/minio/health/ready"]
       interval: 3s
       timeout: 3s
       retries: 20

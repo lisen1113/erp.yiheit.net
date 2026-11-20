@@ -16,4 +16,4 @@ PostgreSQL 只存元数据。业务通过 Storage 接口签名 PUT/GET、读取�
 
 规格要求使用用户提供的正式原图。本任务的 `uv run --frozen python scripts/seed/brand_sample.py local-test-logo.png` 仅生成醒目标记的测试图。可用 `uv run --frozen python scripts/seed/brand_sample.py local-official-logo.png --from-spec "<冻结规格文件.docx>"` 提取内嵌正式横版原图。命令验证冻结 SHA-256，不修改像素。管理员核验后通过同一上传流程登记 LOGO_HORIZONTAL，不在迁移中启用真实资产。
 
-依赖 boto3 1.44.7（Apache-2.0，用于签名和版本存储）；Pillow 13.0.0（MIT-CMU，用于图片验证）。MinIO 开发容器为 AGPL-3.0，不随生产服务发布。
+依赖 boto3 1.44.7（Apache-2.0，用于签名和版本存储）；Pillow 13.0.0（MIT-CMU，用于图片验证）。MinIO 开发容器从官方 RELEASE.2025-10-15T17-29-55Z 源码构建（AGPL-3.0），不随生产服务发布。官方 Quay 镜像的匿名拉取在 CI 返回 401。

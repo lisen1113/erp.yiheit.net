@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cmd=(docker compose -p t009-storage -f compose.yaml -f infra/compose.storage.yaml)
-"${cmd[@]}" up -d --wait minio
+"${cmd[@]}" up -d --build --wait minio
 uv run --frozen python - <<'PY'
 import boto3
 import os
