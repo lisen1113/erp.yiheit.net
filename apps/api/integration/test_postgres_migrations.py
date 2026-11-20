@@ -24,6 +24,7 @@ AUTH_TABLES = [
     "company",
     "employee",
 ]
+RBAC_TABLES = sorted([*AUTH_TABLES, "permission", "role", "role_permission", "user_role"])
 CONFIG = Path(__file__).resolve().parents[1] / "alembic.ini"
 
 
@@ -50,18 +51,15 @@ def migrated_engine():
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*AUTH_TABLES, "permission", "role", "role_permission", "user_role"]
+            [*RBAC_TABLES, "audit_log", "security_event"]
         )
         alembic("downgrade", "-1")
-        assert sorted(inspect(engine).get_table_names()) == AUTH_TABLES
+        assert sorted(inspect(engine).get_table_names()) == RBAC_TABLES
         with engine.connect() as connection:
-            assert (
-                connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == "0002_auth_identity"
-            )
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "0003_rbac"
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*AUTH_TABLES, "permission", "role", "role_permission", "user_role"]
+            [*RBAC_TABLES, "audit_log", "security_event"]
         )
         alembic("check")
         yield engine
@@ -71,7 +69,9 @@ def migrated_engine():
 
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == ("0003_rbac")
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
+            "0004_audit_security"
+        )
 
 
 def test_company_uuid_audit_utc_and_optimistic_version(migrated_engine) -> None:

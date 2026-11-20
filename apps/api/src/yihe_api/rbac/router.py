@@ -1,6 +1,6 @@
 """RBAC API and reusable FastAPI authorization dependency."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Annotated
 from uuid import UUID
 
@@ -9,6 +9,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from yihe_api.audit.payload import permission_diff
+from yihe_api.audit.service import Actor, Category, audit_change
 from yihe_api.auth.models import Employee, User
 from yihe_api.auth.router import DB, authenticated, now_utc, revoke_all
 from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
@@ -85,7 +87,7 @@ def target_user(db: Session, principal: Principal, target_id: UUID) -> User:
     if user is None:
         raise ApiError(ErrorCode.NOT_FOUND)
     if user.id == principal.user.id:
-        raise ApiError(ErrorCode.FORBIDDEN)
+        raise ApiError(ErrorCode.SELF_ESCALATION_DENIED)
     return user
 
 
@@ -149,13 +151,39 @@ def check_delegation(principal: Principal, permissions: list[Permission]) -> Non
         principal.require(permission.code, company=True)
 
 
-def flush_change(db: Session, actor: UUID, target: UUID, action: str) -> None:
+def flush_change(
+    db: Session,
+    request: Request,
+    actor: UUID,
+    target: UUID,
+    action: str,
+    *,
+    before: Mapping[str, object] | None = None,
+    after: Mapping[str, object] | None = None,
+    metadata: Mapping[str, object] | None = None,
+) -> None:
     try:
         db.flush()
     except IntegrityError as exc:
         if getattr(exc.orig, "sqlstate", None) not in {"23505", "23P01"}:
             raise
         raise ApiError(ErrorCode.CONFLICT) from None
+    identity = getattr(request.state, "audit_actor", None)
+    if not isinstance(identity, Actor) or identity.user_id != actor:
+        raise ApiError(ErrorCode.AUDIT_EVENT_INVALID)
+    audit_change(
+        db,
+        company_id=identity.company_id,
+        actor=identity,
+        action=action,
+        entity_type="role" if action.startswith("role.") else "app_user",
+        entity_id=target,
+        category=Category.AUTHORIZATION,
+        before=before,
+        after=after,
+        metadata=metadata,
+        request=request,
+    )
     LOGGER.info(
         "rbac.change",
         extra={"actor_id": str(actor), "target_id": str(target), "rbac_action": action},
@@ -236,7 +264,14 @@ def create_user(payload: UserCreate, request: Request, db: DB) -> UserView:
         if getattr(exc.orig, "sqlstate", None) != "23505":
             raise
         raise ApiError(ErrorCode.CONFLICT) from None
-    flush_change(db, actor.id, user.id, "user.create")
+    flush_change(
+        db,
+        request,
+        actor.id,
+        user.id,
+        "user.create",
+        after={"status": user.status, "employee_id": user.employee_id},
+    )
     return user_view(user)
 
 
@@ -256,12 +291,21 @@ def patch_user(id: UUID, payload: UserPatch, request: Request, db: DB) -> UserVi
             )
         )
         check_delegation(principal, active_grants)
+    before = {"status": user.status}
     user.status = payload.status
     user.updated_by = principal.user.id
     user.version_no += 1
     if user.status == "disabled":
         revoke_all(db, user, now_utc())
-    flush_change(db, principal.user.id, user.id, "user.status")
+    flush_change(
+        db,
+        request,
+        principal.user.id,
+        user.id,
+        "user.status",
+        before=before,
+        after={"status": user.status},
+    )
     return user_view(user)
 
 
@@ -303,7 +347,9 @@ def assign_role(id: UUID, payload: RoleAssignment, request: Request, db: DB) -> 
     db.add(entry)
     user.updated_by = principal.user.id
     user.version_no += 1
-    flush_change(db, principal.user.id, user.id, "user.role.assign")
+    flush_change(
+        db, request, principal.user.id, user.id, "user.role.assign", metadata={"role_id": role.id}
+    )
     return AssignmentView.model_validate(entry, from_attributes=True)
 
 
@@ -330,7 +376,9 @@ def revoke_role(
     entry.version_no += 1
     user.version_no += 1
     user.updated_by = principal.user.id
-    flush_change(db, principal.user.id, user.id, "user.role.revoke")
+    flush_change(
+        db, request, principal.user.id, user.id, "user.role.revoke", metadata={"role_id": role_id}
+    )
 
 
 @router.get("/roles")
@@ -371,7 +419,7 @@ def create_role(payload: RoleCreate, request: Request, db: DB) -> RoleView:
         if getattr(exc.orig, "sqlstate", None) != "23505":
             raise
         raise ApiError(ErrorCode.CONFLICT) from None
-    flush_change(db, actor.id, role.id, "role.create")
+    flush_change(db, request, actor.id, role.id, "role.create", after=role_audit_fields(role))
     return role_view(role)
 
 
@@ -395,6 +443,7 @@ def patch_role(id: UUID, payload: RolePatch, request: Request, db: DB) -> RoleVi
             check_delegation(principal, role_permissions(db, role))
     else:
         check_delegation(principal, role_permissions(db, role))
+    before = role_audit_fields(role)
     role.name = payload.name
     role.description = payload.description
     role.data_scope = payload.data_scope.lower()
@@ -402,7 +451,15 @@ def patch_role(id: UUID, payload: RolePatch, request: Request, db: DB) -> RoleVi
     role.is_active = payload.is_active
     role.updated_by = principal.user.id
     role.version_no += 1
-    flush_change(db, principal.user.id, role.id, "role.update")
+    flush_change(
+        db,
+        request,
+        principal.user.id,
+        role.id,
+        "role.update",
+        before=before,
+        after=role_audit_fields(role),
+    )
     return role_view(role)
 
 
@@ -450,7 +507,14 @@ def replace_permissions(
         db.add(RolePermission(role_id=id, permission_id=key, granted_by=principal.user.id))
     role.updated_by = principal.user.id
     role.version_no += 1
-    flush_change(db, principal.user.id, role.id, "role.permissions.replace")
+    flush_change(
+        db,
+        request,
+        principal.user.id,
+        role.id,
+        "role.permissions.replace",
+        metadata=permission_diff((p.code for p in existing), (p.code for p in permissions)),
+    )
     return role_view(role)
 
 
@@ -460,3 +524,11 @@ def my_permissions(principal: Current) -> EffectivePermissions:
         permissions={k: sorted(v) for k, v in principal.grants.items()},
         mfa_required_for=sorted(principal.blocked - principal.grants.keys()),
     )
+
+
+def role_audit_fields(role: Role) -> dict[str, object]:
+    return {
+        "is_active": role.is_active,
+        "data_scope": role.data_scope.upper(),
+        "requires_mfa": role.requires_mfa,
+    }

@@ -60,6 +60,9 @@ HIGH_PERMISSIONS = SOD_ACTIONS | {
     "report.export",
     "serial_number.export",
     "system.audit.view",
+    "system.audit.export",
+    "system.audit.view_sensitive_metadata",
+    "system.security_event.view",
 }
 PERMISSIONS = (
     frozenset(
@@ -70,6 +73,7 @@ PERMISSIONS = (
             BANK_MASKED,
             "company.profile.view",
             "template.manage",
+            "system.security_event.view",
             "quotation.create",
             "quotation.render",
             "quotation.include_bank",
@@ -92,6 +96,7 @@ SYSTEM_ROLES = {
             "company.profile.view",
             "company.profile.edit",
             "template.manage",
+            "system.security_event.view",
         },
     ),
     "MANAGEMENT": ("管理层", Scope.COMPANY, True, {"company.profile.view"}),
@@ -100,7 +105,7 @@ SYSTEM_ROLES = {
     "SALES": ("销售", Scope.SELF, False, {BANK_MASKED, "quotation.create", "quotation.render"}),
     "PURCHASE": ("采购", Scope.SELF, False, {BANK_MASKED}),
     "WAREHOUSE": ("仓库", Scope.SELF, False, set()),
-    "AUDITOR": ("审计员", Scope.SELF, False, set()),
+    "AUDITOR": ("审计员", Scope.COMPANY, False, {"system.audit.view"}),
 }
 
 

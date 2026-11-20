@@ -2,9 +2,12 @@
 
 from time import monotonic_ns
 
+from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import Headers, MutableHeaders
+from starlette.requests import Request
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from yihe_api.audit.service import record_rejection
 from yihe_api.errors import ErrorCode, error_response
 from yihe_api.tracing import LOGGER, TRACE_HEADER, bind_trace
 
@@ -34,6 +37,12 @@ class RequestTraceMiddleware:
                     response_started = True
                     context.status_code = message["status"]
                     MutableHeaders(scope=message)[TRACE_HEADER] = context.trace_id
+                    state = scope.get("state", {})
+                    code = state.get("audit_error")
+                    if isinstance(code, ErrorCode):
+                        await run_in_threadpool(
+                            record_rejection, Request(scope), code, status=message["status"]
+                        )
                 await send(message)
 
             try:

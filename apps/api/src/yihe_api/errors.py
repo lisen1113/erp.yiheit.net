@@ -26,6 +26,10 @@ class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     HTTP_ERROR = "HTTP_ERROR"
+    SELF_ESCALATION_DENIED = "SELF_ESCALATION_DENIED"
+    AUDIT_WRITE_FAILED = "AUDIT_WRITE_FAILED"
+    AUDIT_ACCESS_DENIED = "AUDIT_ACCESS_DENIED"
+    AUDIT_EVENT_INVALID = "AUDIT_EVENT_INVALID"
     AUTH_INVALID_CREDENTIALS = "AUTH_INVALID_CREDENTIALS"
     AUTH_INVALID_MFA = "AUTH_INVALID_MFA"
     AUTH_ORIGIN_REJECTED = "AUTH_ORIGIN_REJECTED"
@@ -48,6 +52,10 @@ ERRORS = {
     ErrorCode.VALIDATION_ERROR: (422, "请检查填写的字段。"),
     ErrorCode.INTERNAL_ERROR: (500, "系统暂时无法处理此请求，请稍后重试。"),
     ErrorCode.HTTP_ERROR: (400, "请求未能完成。"),
+    ErrorCode.SELF_ESCALATION_DENIED: (403, "不能变更自己的授权。"),
+    ErrorCode.AUDIT_WRITE_FAILED: (500, "无法保存审计记录，操作未提交。"),
+    ErrorCode.AUDIT_ACCESS_DENIED: (403, "没有审计查询权限。"),
+    ErrorCode.AUDIT_EVENT_INVALID: (422, "审计事件不符合记录规则。"),
     ErrorCode.AUTH_INVALID_CREDENTIALS: (401, "用户名或密码错误。"),
     ErrorCode.AUTH_INVALID_MFA: (401, "验证码无效，请重试。"),
     ErrorCode.AUTH_ORIGIN_REJECTED: (403, "请求来源不受信任。"),
@@ -61,7 +69,7 @@ ERRORS = {
 HTTP_CODES = {
     status: code
     for code, (status, _) in ERRORS.items()
-    if not code.name.startswith("AUTH_")
+    if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_"))
     and code
     not in {
         ErrorCode.VERSION_CONFLICT,
@@ -133,18 +141,21 @@ def error_response(
     )
 
 
-async def api_error(_request: Request, exc: ApiError) -> JSONResponse:
+async def api_error(request: Request, exc: ApiError) -> JSONResponse:
+    request.state.audit_error = exc.code
     return error_response(exc.code)
 
 
-async def http_error(_request: Request, exc: HTTPException) -> JSONResponse:
+async def http_error(request: Request, exc: HTTPException) -> JSONResponse:
     code = HTTP_CODES.get(exc.status_code)
     if code is None:
         code = ErrorCode.INTERNAL_ERROR if exc.status_code >= 500 else ErrorCode.HTTP_ERROR
+    request.state.audit_error = code
     return error_response(code, status=exc.status_code, headers=exc.headers)
 
 
-async def validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+    request.state.audit_error = ErrorCode.VALIDATION_ERROR
     fields = []
     for error in exc.errors():
         kind = error["type"]

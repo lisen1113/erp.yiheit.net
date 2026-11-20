@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from yihe_api.audit.service import Actor, Category, Source, audit_change, stamp_identity
 from yihe_api.auth.csrf import allows_cookie_request
 from yihe_api.auth.models import AuthSession, Employee, LoginChallenge, RefreshGrant, User
 from yihe_api.auth.schemas import (
@@ -118,6 +119,15 @@ def failed_attempt(db: Session, user: User, now: datetime) -> None:
     if user.failed_login_count >= 5:
         user.locked_until = now + LOCK_WINDOW
         revoke_all(db, user, now)
+        audit_change(
+            db,
+            company_id=user.company_id,
+            action="auth.account_locked",
+            entity_type="app_user",
+            category=Category.SECURITY,
+            entity_id=user.id,
+            source=Source.SYSTEM,
+        )
     # Persist security mutations before the error leaves the transaction dependency.
     db.commit()
 
@@ -172,7 +182,9 @@ def access(user: User, session: AuthSession, now: datetime) -> Access:
     )
 
 
-def begin_session(db: Session, user: User, response: Response, now: datetime) -> Access:
+def begin_session(
+    db: Session, user: User, response: Response, now: datetime, request: Request
+) -> Access:
     clear_failures(user)
     user.last_login_at = now
     session = AuthSession(
@@ -184,6 +196,8 @@ def begin_session(db: Session, user: User, response: Response, now: datetime) ->
     db.add(session)
     db.flush()
     set_refresh(response, db, session, now)
+    stamp_identity(request, Actor(user.company_id, user.id, user.employee_id, session.id))
+    auth_audit(db, request, user, "auth.login")
     return access(user, session, now)
 
 
@@ -232,6 +246,7 @@ def authenticated(request: Request, db: Session, *, lock: bool = True) -> tuple[
         or (user.mfa_required and not user.mfa_enabled)
     ):
         raise ApiError(ErrorCode.UNAUTHENTICATED)
+    stamp_identity(request, Actor(user.company_id, user.id, user.employee_id, session.id))
     return user, session
 
 
@@ -260,6 +275,7 @@ def login(payload: Login, request: Request, response: Response, db: DB) -> Acces
         .where(User.username_normalized == func.lower(payload.username))
         .with_for_update()
     )
+    request.state.audit_identifier = payload.username
     password = payload.password.get_secret_value()
     usable = user is not None and available(db, user, now)
     encoded = user.password_hash if user is not None and usable else dummy_hash()
@@ -283,7 +299,7 @@ def login(payload: Login, request: Request, response: Response, db: DB) -> Acces
             challenge=token,
             expires_in=CHALLENGE_SECONDS,
         )
-    return begin_session(db, user, response, now)
+    return begin_session(db, user, response, now, request)
 
 
 def verify_code(db: Session, user: User, code: str, now: datetime, request: Request) -> None:
@@ -306,7 +322,8 @@ def mfa_verify(payload: ChallengeVerify, request: Request, response: Response, d
         raise ApiError(ErrorCode.AUTH_INVALID_MFA)
     verify_code(db, user, payload.code, now, request)
     challenge.consumed = True
-    return begin_session(db, user, response, now)
+    auth_audit(db, request, user, "auth.mfa_verify", {"mfa_event": "verified"})
+    return begin_session(db, user, response, now, request)
 
 
 @router.post("/refresh", dependencies=[Depends(csrf)])
@@ -349,8 +366,9 @@ def refresh(request: Request, response: Response, db: DB) -> Access:
 
 @router.post("/logout", status_code=204, dependencies=[Depends(csrf)])
 def logout(request: Request, response: Response, db: DB) -> None:
-    _, session = authenticated(request, db)
+    user, session = authenticated(request, db)
     session.revoked_at = now_utc()
+    auth_audit(db, request, user, "auth.logout")
     clear_refresh(response)
 
 
@@ -358,6 +376,7 @@ def logout(request: Request, response: Response, db: DB) -> None:
 def logout_all(request: Request, response: Response, db: DB) -> None:
     user, _ = authenticated(request, db)
     revoke_all(db, user, now_utc())
+    auth_audit(db, request, user, "auth.logout_all")
     clear_refresh(response)
 
 
@@ -392,6 +411,7 @@ def change_password(payload: PasswordChange, request: Request, response: Respons
     now = now_utc()
     user.password_hash = PASSWORD_HASHER.hash(password)
     user.password_changed_at = now
+    auth_audit(db, request, user, "auth.password_change", {"password_changed": True})
     revoke_all(db, user, now)
     clear_refresh(response)
 
@@ -410,6 +430,7 @@ def mfa_setup(payload: ConfirmPassword, request: Request, db: DB) -> Setup:
     user.mfa_secret_encrypted = auth_config().cipher.encrypt(secret.encode()).decode()
     user.mfa_setup_expires_at = now + timedelta(seconds=CHALLENGE_SECONDS)
     user.mfa_last_step = None
+    auth_audit(db, request, user, "auth.mfa_setup", {"mfa_event": "setup"})
     return Setup(
         otpauth_uri=pyotp.TOTP(secret).provisioning_uri(
             name=user.username, issuer_name="上海以和 ERP"
@@ -428,9 +449,10 @@ def mfa_enable(payload: TotpCode, request: Request, response: Response, db: DB) 
         raise ApiError(ErrorCode.CONFLICT)
     verify_code(db, user, payload.code, now, request)
     user.mfa_enabled = True
+    auth_audit(db, request, user, "auth.mfa_enable", {"mfa_event": "enabled"})
     user.mfa_setup_expires_at = None
     revoke_all(db, user, now)
-    return begin_session(db, user, response, now)
+    return begin_session(db, user, response, now, request)
 
 
 @router.post("/mfa/disable", status_code=204, dependencies=[Depends(csrf)])
@@ -444,4 +466,27 @@ def mfa_disable(payload: ConfirmPassword, request: Request, response: Response, 
     user.mfa_last_step = None
     user.mfa_setup_expires_at = None
     revoke_all(db, user, now_utc())
+    auth_audit(db, request, user, "auth.mfa_disable", {"mfa_event": "disabled"})
     clear_refresh(response)
+
+
+def auth_audit(
+    db: Session,
+    request: Request,
+    user: User,
+    action: str,
+    metadata: dict[str, object] | None = None,
+) -> None:
+    context = getattr(request.state, "audit_actor", None)
+    actor = context or Actor(user.company_id, user.id, user.employee_id)
+    audit_change(
+        db,
+        company_id=user.company_id,
+        actor=actor,
+        entity_type="app_user",
+        entity_id=user.id,
+        action=action,
+        category=Category.AUTHENTICATION,
+        metadata=metadata,
+        request=request,
+    )

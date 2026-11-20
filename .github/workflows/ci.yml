@@ -59,7 +59,7 @@ jobs:
           host=$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$container")
           echo "POSTGRES_HOST=$host" >> "$GITHUB_ENV"
       - name: Verify empty database, rollback, re-upgrade and database contracts
-        run: uv run --frozen pytest -v -s apps/api/integration/test_postgres_migrations.py apps/api/integration/test_authentication.py apps/api/integration/test_authorization.py --tb=short
+        run: uv run --frozen pytest -v -s apps/api/integration/test_postgres_migrations.py apps/api/integration/test_authentication.py apps/api/integration/test_authorization.py apps/api/integration/test_audit.py --tb=short
       - name: Verify Alembic from the Compose API image
         run: |
           docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f infra/compose.migrations.yaml run --rm --no-deps --build api alembic check
