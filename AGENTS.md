@@ -12,7 +12,7 @@
 
 ## 2. 冻结技术栈（规格书第107节，不得替换）
 - 后端：Python 3.12、FastAPI、Pydantic v2、SQLAlchemy 2.x（同步会话）、Alembic；依赖管理 uv；ruff + mypy
-- 数据库：PostgreSQL 16
+- 数据库：PostgreSQL 16；Schema 只通过 Alembic 迁移变更
 - 任务队列：Celery 5 + Redis 7（队列：default / import / export / print；print 与 export 并发=1）
 - 前端：Next.js（App Router）+ TypeScript + Ant Design 5；pnpm；前端类型由 OpenAPI 生成
 - PDF：Playwright + Chromium + Noto Sans CJK SC（独立 print worker 容器）
@@ -34,11 +34,12 @@
 - 所有过账、审批、导入提交、外部回调接口必须支持 `Idempotency-Key` 与 `version_no`（乐观锁）。
 - 移动加权平均按**过账顺序**计算，不按业务日期回溯重算（B2）。
 - 订单预计返利不形成应收；真实返利只进总代返利总账；返利抵扣不修改库存成本（第五部分）。
-- 权限在后端执行：无成本权限时 API 不返回成本/毛利字段，不能只在前端隐藏。
+- RBAC 权限在后端执行：无成本权限时 API 不返回成本/毛利字段，不能只在前端隐藏。
 - 制单人与审批人不得为同一人（付款、退款、返利、成本/价差调整、负库存、反结账）。
 - 已结账期间禁止新增、修改、反审核单据。
 - 公司银行账户唯一主表为 `company_bank_account`，外键统一命名 `company_bank_account_id`。
 - 唯一约束默认包含 `company_id`。
+- 关键业务变化与业务审计同事务写入；无可靠身份的拒绝事件进入独立安全事件记录。
 
 ## 5. 老系统迁移规则（规格书第112、119节）
 - 来源：第三方二次开发的老版任我行分销ERP（SQL Server 2000，第三方托管）。**不提供数据库备份**。

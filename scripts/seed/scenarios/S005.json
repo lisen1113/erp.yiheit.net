@@ -1,0 +1,27 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S005",
+  "name": "换货",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "skus": [
+      "SKU08"
+    ],
+    "warehouses": [
+      "W01"
+    ]
+  },
+  "steps": [
+    "旧SN退回",
+    "新SN换出"
+  ],
+  "inputs": {
+    "original_serial": "TEST-EX-OLD",
+    "replacement_serial": "TEST-EX-NEW"
+  }
+}

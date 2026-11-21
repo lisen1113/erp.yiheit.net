@@ -1,0 +1,29 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S002",
+  "name": "部分出库",
+  "references": {
+    "customers": [
+      "C02"
+    ],
+    "skus": [
+      "SKU11"
+    ],
+    "warehouses": [
+      "W01"
+    ]
+  },
+  "steps": [
+    "订单100台",
+    "部分出库60台",
+    "剩余40台"
+  ],
+  "inputs": {
+    "ordered_quantity": 100,
+    "shipped_quantity": 60,
+    "remaining_quantity": 40
+  }
+}

@@ -63,6 +63,28 @@ jobs:
       - name: Verify Alembic from the Compose API image
         run: |
           docker compose -p "$COMPOSE_PROJECT_NAME" -f compose.yaml -f infra/compose.migrations.yaml run --rm --no-deps --build api alembic check
+      - name: Verify T010 seed on a new isolated database
+        env:
+          ERP_ENV: test
+        run: |
+          docker compose -p "$COMPOSE_PROJECT_NAME" exec -T postgres createdb -U "$POSTGRES_USER" yihe_erp_seed_ci
+          export POSTGRES_DB=yihe_erp_seed_ci
+          export ERP_SEED_TEST_DB_HOST="$POSTGRES_HOST"
+          uv run --frozen alembic -c apps/api/alembic.ini upgrade head
+          password=$(openssl rand -hex 24)
+          echo "::add-mask::$password"
+          export ERP_SEED_DEFAULT_PASSWORD="$password"
+          for action in seed-dev seed-reset; do
+            if ERP_ENV=production uv run --frozen python -m yihe_api.cli "$action"; then
+              echo "Production command unexpectedly succeeded: $action"
+              exit 1
+            fi
+          done
+          uv run --frozen python -m yihe_api.cli seed-dev
+          uv run --frozen python -m yihe_api.cli seed-dev
+          uv run --frozen python -m yihe_api.cli seed-reset
+          uv run --frozen python scripts/seed/validate_fixtures.py
+          uv run --frozen pytest -q -s apps/api/integration/test_dev_seed.py --tb=short
       - name: Start and recreate versioned MinIO
         run: |
           secret=$(openssl rand -hex 24)

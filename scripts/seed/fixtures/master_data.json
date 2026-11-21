@@ -1,0 +1,689 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "departments": [
+    {
+      "id": "DEP-01",
+      "name": "示例经营部"
+    },
+    {
+      "id": "DEP-02",
+      "name": "示例技术部"
+    }
+  ],
+  "customers": [
+    {
+      "id": "C01",
+      "name": "上海示例客户01",
+      "party_id": "PARTY-C01",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c01@example.invalid"
+    },
+    {
+      "id": "C02",
+      "name": "上海示例客户02",
+      "party_id": "PARTY-C02",
+      "kind": "CREDIT",
+      "active": true,
+      "contact_email": "c02@example.invalid"
+    },
+    {
+      "id": "C03",
+      "name": "上海示例客户03",
+      "party_id": "PARTY-C03",
+      "kind": "PREPAID",
+      "active": true,
+      "contact_email": "c03@example.invalid"
+    },
+    {
+      "id": "C04",
+      "name": "上海示例客户04",
+      "party_id": "PARTY-C04",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c04@example.invalid"
+    },
+    {
+      "id": "C05",
+      "name": "上海示例客户05",
+      "party_id": "PARTY-C05",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c05@example.invalid"
+    },
+    {
+      "id": "C06",
+      "name": "上海示例客户06",
+      "party_id": "PARTY-C06",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c06@example.invalid"
+    },
+    {
+      "id": "C07",
+      "name": "上海示例客户07",
+      "party_id": "PARTY-C07",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c07@example.invalid"
+    },
+    {
+      "id": "C08",
+      "name": "上海示例客户08",
+      "party_id": "PARTY-C08",
+      "kind": "STANDARD",
+      "active": true,
+      "contact_email": "c08@example.invalid"
+    },
+    {
+      "id": "C09",
+      "name": "上海示例客户09",
+      "party_id": "PARTY-C09",
+      "kind": "STANDARD",
+      "active": false,
+      "contact_email": "c09@example.invalid"
+    },
+    {
+      "id": "C10",
+      "name": "上海示例客户10",
+      "party_id": "PARTY-DUAL",
+      "kind": "DUAL",
+      "active": true,
+      "contact_email": "c10@example.invalid"
+    }
+  ],
+  "suppliers": [
+    {
+      "id": "V01",
+      "name": "上海示例供应商01",
+      "party_id": "PARTY-V01",
+      "kind": "HARDWARE",
+      "contact_email": "v01@example.invalid"
+    },
+    {
+      "id": "V02",
+      "name": "上海示例供应商02",
+      "party_id": "PARTY-V02",
+      "kind": "DISTRIBUTOR",
+      "contact_email": "v02@example.invalid"
+    },
+    {
+      "id": "V03",
+      "name": "上海示例供应商03",
+      "party_id": "PARTY-V03",
+      "kind": "DISTRIBUTOR",
+      "contact_email": "v03@example.invalid"
+    },
+    {
+      "id": "V04",
+      "name": "上海示例供应商04",
+      "party_id": "PARTY-V04",
+      "kind": "SERVICE",
+      "contact_email": "v04@example.invalid"
+    },
+    {
+      "id": "V05",
+      "name": "上海示例供应商05",
+      "party_id": "PARTY-DUAL",
+      "kind": "DUAL",
+      "contact_email": "v05@example.invalid"
+    }
+  ],
+  "skus": [
+    {
+      "id": "SKU01",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-01",
+      "sku": "TEST-SKU01",
+      "mpn": "TEST-MPN-01",
+      "name_zh": "示例笔记本",
+      "name_en": "Synthetic Test Item 1",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU02",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-02",
+      "sku": "TEST-SKU02",
+      "mpn": "TEST-MPN-02",
+      "name_zh": "示例平板",
+      "name_en": "Synthetic Test Item 2",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU03",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-03",
+      "sku": "TEST-SKU03",
+      "mpn": "TEST-MPN-03",
+      "name_zh": "示例工作站",
+      "name_en": "Synthetic Test Item 3",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU04",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-04",
+      "sku": "TEST-SKU04",
+      "mpn": "TEST-MPN-04",
+      "name_zh": "示例服务器",
+      "name_en": "Synthetic Test Item 4",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU05",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-05",
+      "sku": "TEST-SKU05",
+      "mpn": "TEST-MPN-05",
+      "name_zh": "示例显示器",
+      "name_en": "Synthetic Test Item 5",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU06",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-06",
+      "sku": "TEST-SKU06",
+      "mpn": "TEST-MPN-06",
+      "name_zh": "示例高价值扩展坞",
+      "name_en": "Synthetic Test Item 6",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU07",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-07",
+      "sku": "TEST-SKU07",
+      "mpn": "TEST-MPN-07",
+      "name_zh": "示例DOA笔记本",
+      "name_en": "Synthetic Test Item 7",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": "DOA"
+      }
+    },
+    {
+      "id": "SKU08",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-08",
+      "sku": "TEST-SKU08",
+      "mpn": "TEST-MPN-08",
+      "name_zh": "示例换机平板",
+      "name_en": "Synthetic Test Item 8",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": "EXCHANGE"
+      }
+    },
+    {
+      "id": "SKU09",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-09",
+      "sku": "TEST-SKU09",
+      "mpn": "TEST-MPN-09",
+      "name_zh": "示例维修工作站",
+      "name_en": "Synthetic Test Item 9",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": "REPAIR"
+      }
+    },
+    {
+      "id": "SKU10",
+      "category": "示例SN硬件",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-10",
+      "sku": "TEST-SKU10",
+      "mpn": "TEST-MPN-10",
+      "name_zh": "示例SN笔记本",
+      "name_en": "Synthetic Test Item 10",
+      "tracking_mode": "SN",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU11",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-11",
+      "sku": "TEST-SKU11",
+      "mpn": "TEST-MPN-11",
+      "name_zh": "示例键盘",
+      "name_en": "Synthetic Test Item 11",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU12",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-12",
+      "sku": "TEST-SKU12",
+      "mpn": "TEST-MPN-12",
+      "name_zh": "示例鼠标",
+      "name_en": "Synthetic Test Item 12",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU13",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-13",
+      "sku": "TEST-SKU13",
+      "mpn": "TEST-MPN-13",
+      "name_zh": "示例电源",
+      "name_en": "Synthetic Test Item 13",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU14",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-14",
+      "sku": "TEST-SKU14",
+      "mpn": "TEST-MPN-14",
+      "name_zh": "示例线材",
+      "name_en": "Synthetic Test Item 14",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU15",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-15",
+      "sku": "TEST-SKU15",
+      "mpn": "TEST-MPN-15",
+      "name_zh": "示例键盘套件",
+      "name_en": "Synthetic Test Item 15",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU16",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-16",
+      "sku": "TEST-SKU16",
+      "mpn": "TEST-MPN-16",
+      "name_zh": "示例鼠标套件",
+      "name_en": "Synthetic Test Item 16",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU17",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-17",
+      "sku": "TEST-SKU17",
+      "mpn": "TEST-MPN-17",
+      "name_zh": "示例备用电源",
+      "name_en": "Synthetic Test Item 17",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU18",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-18",
+      "sku": "TEST-SKU18",
+      "mpn": "TEST-MPN-18",
+      "name_zh": "示例网络线材",
+      "name_en": "Synthetic Test Item 18",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU19",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-19",
+      "sku": "TEST-SKU19",
+      "mpn": "TEST-MPN-19",
+      "name_zh": "示例桌面配件",
+      "name_en": "Synthetic Test Item 19",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU20",
+      "category": "示例数量库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-20",
+      "sku": "TEST-SKU20",
+      "mpn": "TEST-MPN-20",
+      "name_zh": "示例保护套",
+      "name_en": "Synthetic Test Item 20",
+      "tracking_mode": "QUANTITY",
+      "unit": "台",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU21",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-21",
+      "sku": "TEST-SKU21",
+      "mpn": "TEST-MPN-21",
+      "name_zh": "示例Microsoft 365订阅测试",
+      "name_en": "Synthetic Test Item 21",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU22",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-22",
+      "sku": "TEST-SKU22",
+      "mpn": "TEST-MPN-22",
+      "name_zh": "示例Copilot订阅测试",
+      "name_en": "Synthetic Test Item 22",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU23",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-23",
+      "sku": "TEST-SKU23",
+      "mpn": "TEST-MPN-23",
+      "name_zh": "示例技术服务",
+      "name_en": "Synthetic Test Item 23",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU24",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-24",
+      "sku": "TEST-SKU24",
+      "mpn": "TEST-MPN-24",
+      "name_zh": "示例安装服务",
+      "name_en": "Synthetic Test Item 24",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU25",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-25",
+      "sku": "TEST-SKU25",
+      "mpn": "TEST-MPN-25",
+      "name_zh": "示例培训服务",
+      "name_en": "Synthetic Test Item 25",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU26",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-26",
+      "sku": "TEST-SKU26",
+      "mpn": "TEST-MPN-26",
+      "name_zh": "示例维护服务",
+      "name_en": "Synthetic Test Item 26",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU27",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-27",
+      "sku": "TEST-SKU27",
+      "mpn": "TEST-MPN-27",
+      "name_zh": "示例资产盘点服务",
+      "name_en": "Synthetic Test Item 27",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU28",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-28",
+      "sku": "TEST-SKU28",
+      "mpn": "TEST-MPN-28",
+      "name_zh": "示例设备配置服务",
+      "name_en": "Synthetic Test Item 28",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU29",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-29",
+      "sku": "TEST-SKU29",
+      "mpn": "TEST-MPN-29",
+      "name_zh": "示例远程支持",
+      "name_en": "Synthetic Test Item 29",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    },
+    {
+      "id": "SKU30",
+      "category": "示例非库存",
+      "brand": "示例品牌",
+      "spu": "TEST-SPU-30",
+      "sku": "TEST-SKU30",
+      "mpn": "TEST-MPN-30",
+      "name_zh": "示例迁移演练服务",
+      "name_en": "Synthetic Test Item 30",
+      "tracking_mode": "NON_STOCK",
+      "unit": "项",
+      "tax_rate": "0.1300",
+      "attributes": {
+        "synthetic": true,
+        "rma_case": null
+      }
+    }
+  ],
+  "warehouses": [
+    {
+      "id": "W01",
+      "name": "上海示例主仓",
+      "warehouse_type": "STANDARD"
+    },
+    {
+      "id": "W02",
+      "name": "上海示例临时仓",
+      "warehouse_type": "STANDARD"
+    },
+    {
+      "id": "W03",
+      "name": "上海示例直运虚拟仓",
+      "warehouse_type": "DROP_SHIP",
+      "expected_balance": "0.0000"
+    }
+  ],
+  "bank_accounts": [
+    {
+      "id": "B01",
+      "name": "人民币示例结算账户1",
+      "account_no": "TEST-ACCOUNT-0001",
+      "currency_code": "CNY",
+      "synthetic": true
+    },
+    {
+      "id": "B02",
+      "name": "人民币示例结算账户2",
+      "account_no": "TEST-ACCOUNT-0002",
+      "currency_code": "CNY",
+      "synthetic": true
+    }
+  ],
+  "brand_assets": [
+    {
+      "id": "LOGO01",
+      "name": "上海以和测试Logo",
+      "source": "brand_sample.py",
+      "synthetic": true
+    }
+  ]
+}

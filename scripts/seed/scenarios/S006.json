@@ -1,0 +1,33 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S006",
+  "name": "倒挂与预计返利",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "suppliers": [
+      "V02"
+    ],
+    "skus": [
+      "SKU01"
+    ]
+  },
+  "steps": [
+    "核对账面毛利",
+    "测算预计经营毛利",
+    "不得形成真实AR或实际收入"
+  ],
+  "inputs": {
+    "purchase_amount": "10000.00",
+    "sales_amount": "9500.00",
+    "book_margin_amount": "-500.00",
+    "expected_rebate_amount": "800.00",
+    "expected_operating_margin_amount": "300.00",
+    "creates_real_ar": false,
+    "creates_income": false
+  }
+}

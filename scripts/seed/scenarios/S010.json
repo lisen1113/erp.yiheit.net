@@ -1,0 +1,35 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S010",
+  "name": "月结",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "suppliers": [
+      "V01"
+    ],
+    "warehouses": [
+      "W01"
+    ],
+    "bank_accounts": [
+      "B01"
+    ]
+  },
+  "steps": [
+    "正常已完成单据",
+    "待认领收款",
+    "未匹配银行流水",
+    "未处理价差",
+    "验证月结阻断"
+  ],
+  "inputs": {
+    "completed_documents": 2,
+    "unclaimed_receipt_amount": "150.00",
+    "unmatched_bank_amount": "200.00",
+    "unresolved_price_difference_amount": "50.00"
+  }
+}
