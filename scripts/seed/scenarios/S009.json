@@ -1,0 +1,29 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S009",
+  "name": "直运",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "suppliers": [
+      "V03"
+    ],
+    "skus": [
+      "SKU01"
+    ],
+    "warehouses": [
+      "W03"
+    ]
+  },
+  "steps": [
+    "总代发客户",
+    "直运余额为零"
+  ],
+  "inputs": {
+    "expected_warehouse_balance": "0.0000"
+  }
+}

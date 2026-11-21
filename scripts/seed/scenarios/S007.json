@@ -1,0 +1,24 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S007",
+  "name": "总代返利",
+  "references": {
+    "suppliers": [
+      "V02"
+    ],
+    "skus": [
+      "SKU01"
+    ]
+  },
+  "steps": [
+    "总代确认返利",
+    "采购提货抵扣"
+  ],
+  "inputs": {
+    "confirmed_rebate_amount": "800.00",
+    "offset_amount": "500.00"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S003",
+  "name": "SN链路",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "suppliers": [
+      "V01"
+    ],
+    "skus": [
+      "SKU01"
+    ],
+    "warehouses": [
+      "W01"
+    ]
+  },
+  "steps": [
+    "采购",
+    "入库",
+    "销售",
+    "出库"
+  ],
+  "inputs": {
+    "serial_numbers": [
+      "TEST-SN-001",
+      "TEST-SN-002",
+      "TEST-SN-003",
+      "TEST-SN-004",
+      "TEST-SN-005",
+      "TEST-SN-006",
+      "TEST-SN-007",
+      "TEST-SN-008",
+      "TEST-SN-009",
+      "TEST-SN-010"
+    ]
+  }
+}

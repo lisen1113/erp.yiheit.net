@@ -24,3 +24,5 @@ pnpm contracts:check
 每次任务指令应列出任务编号、引用章节、允许修改目录、完成标准。每批 1–3 个相关任务，通过检查和人工审查后再进入下一批。
 
 本地容器开发环境见 [Docker Compose 使用说明](infra/README.md)。
+
+开发治理和交付流程见 [开发工作流](docs/development-workflow.md)，合成数据和命令见 [种子数据](docs/seed-data.md)。

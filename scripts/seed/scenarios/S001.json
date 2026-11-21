@@ -1,0 +1,36 @@
+{
+  "synthetic": true,
+  "label": "SYNTHETIC TEST DATA",
+  "business_date": "2026-01-15",
+  "currency_code": "CNY",
+  "id": "S001",
+  "name": "采购销售闭环",
+  "references": {
+    "customers": [
+      "C01"
+    ],
+    "suppliers": [
+      "V01"
+    ],
+    "skus": [
+      "SKU11"
+    ],
+    "warehouses": [
+      "W01"
+    ],
+    "bank_accounts": [
+      "B01"
+    ]
+  },
+  "steps": [
+    "采购订单",
+    "入库",
+    "销售订单",
+    "出库",
+    "AR",
+    "收款"
+  ],
+  "inputs": {
+    "quantity": 20
+  }
+}
