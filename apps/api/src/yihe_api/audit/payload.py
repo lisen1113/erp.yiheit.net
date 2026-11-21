@@ -26,6 +26,11 @@ class Field(StrEnum):
     EMPLOYEE_ID = "employee_id"
     RELATED_ID = "related_id"
     ITEM_COUNT = "item_count"
+    FILE_TYPE = "file_asset_type"
+    FILE_MIME = "file_content_type"
+    FILE_SIZE = "file_size_bytes"
+    FILE_HASH = "file_sha256"
+    FILE_STATUS = "file_status"
     ADDED_COUNT = "added_count"
     REMOVED_COUNT = "removed_count"
     KEY_HASH = "idempotency_key_hash"
@@ -66,6 +71,30 @@ def validate(field: Field, value: object) -> AuditValue:
     if field == Field.IDEMPOTENCY_STATUS and isinstance(value, str):
         if value in {"IN_PROGRESS", "COMPLETED", "FAILED_RETRYABLE", "FAILED_FINAL", "EXPIRED"}:
             return value
+    if field == Field.FILE_TYPE and value in ("BRAND", "ATTACHMENT", "IMPORT"):
+        return str(value)
+    if field == Field.FILE_MIME and isinstance(value, str) and len(value) <= 128:
+        if re.fullmatch(r"[a-z0-9.+-]+/[a-z0-9.+-]+", value):
+            return value
+    if field == Field.FILE_SIZE and type(value) is int and 0 < value <= 524288000:
+        return value
+    if field == Field.FILE_HASH and isinstance(value, str) and re.fullmatch(r"[a-f0-9]{64}", value):
+        return value
+    if (
+        field == Field.FILE_STATUS
+        and isinstance(value, str)
+        and value
+        in {
+            "UPLOADING",
+            "AVAILABLE",
+            "QUARANTINED",
+            "REJECTED",
+            "EXPIRED",
+            "INVALIDATED",
+            "DELETED_FROM_STORAGE",
+        }
+    ):
+        return value
     if field in BOOL_FIELDS and isinstance(value, bool):
         return value
     if field in UUID_FIELDS and isinstance(value, UUID):

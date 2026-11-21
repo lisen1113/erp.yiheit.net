@@ -31,6 +31,9 @@ class ErrorCode(StrEnum):
     VALIDATION_ERROR = "VALIDATION_ERROR"
     INTERNAL_ERROR = "INTERNAL_ERROR"
     HTTP_ERROR = "HTTP_ERROR"
+    FILE_INVALID = "FILE_INVALID"
+    FILE_NOT_AVAILABLE = "FILE_NOT_AVAILABLE"
+    FILE_STORAGE_UNAVAILABLE = "FILE_STORAGE_UNAVAILABLE"
     SELF_ESCALATION_DENIED = "SELF_ESCALATION_DENIED"
     AUDIT_WRITE_FAILED = "AUDIT_WRITE_FAILED"
     AUDIT_ACCESS_DENIED = "AUDIT_ACCESS_DENIED"
@@ -62,6 +65,9 @@ ERRORS = {
     ErrorCode.VALIDATION_ERROR: (422, "请检查填写的字段。"),
     ErrorCode.INTERNAL_ERROR: (500, "系统暂时无法处理此请求，请稍后重试。"),
     ErrorCode.HTTP_ERROR: (400, "请求未能完成。"),
+    ErrorCode.FILE_INVALID: (422, "文件类型、大小或名称不符合要求。"),
+    ErrorCode.FILE_NOT_AVAILABLE: (409, "文件当前不可使用。"),
+    ErrorCode.FILE_STORAGE_UNAVAILABLE: (503, "文件存储暂不可用。"),
     ErrorCode.SELF_ESCALATION_DENIED: (403, "不能变更自己的授权。"),
     ErrorCode.AUDIT_WRITE_FAILED: (500, "无法保存审计记录，操作未提交。"),
     ErrorCode.AUDIT_ACCESS_DENIED: (403, "没有审计查询权限。"),
@@ -79,7 +85,7 @@ ERRORS = {
 HTTP_CODES = {
     status: code
     for code, (status, _) in ERRORS.items()
-    if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_", "IDEMPOTENCY_"))
+    if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_", "IDEMPOTENCY_", "FILE_"))
     and code
     not in {
         ErrorCode.VERSION_CONFLICT,

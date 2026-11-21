@@ -26,6 +26,7 @@ AUTH_TABLES = [
 ]
 RBAC_TABLES = sorted([*AUTH_TABLES, "permission", "role", "role_permission", "user_role"])
 AUDIT_TABLES = sorted([*RBAC_TABLES, "audit_log", "security_event"])
+IDEM_TABLES = sorted([*AUDIT_TABLES, "idempotency_record"])
 CONFIG = Path(__file__).resolve().parents[1] / "alembic.ini"
 
 
@@ -52,18 +53,18 @@ def migrated_engine():
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*AUDIT_TABLES, "idempotency_record"]
+            [*IDEM_TABLES, "brand_asset", "file_asset"]
         )
         alembic("downgrade", "-1")
-        assert sorted(inspect(engine).get_table_names()) == AUDIT_TABLES
+        assert sorted(inspect(engine).get_table_names()) == IDEM_TABLES
         with engine.connect() as connection:
             assert (
                 connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == "0004_audit_security"
+                == "0005_idempotency"
             )
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*AUDIT_TABLES, "idempotency_record"]
+            [*IDEM_TABLES, "brand_asset", "file_asset"]
         )
         alembic("check")
         yield engine
@@ -74,7 +75,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0005_idempotency"
+            "0006_file_brand_assets"
         )
 
 
