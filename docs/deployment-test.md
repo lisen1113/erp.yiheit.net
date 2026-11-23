@@ -54,7 +54,18 @@ GitHub 要求手动入口先存在于默认分支。首次现场部署无需此�
 
 ## 现场验收
 
-已确认 DNS、官网基线、宿主机 Nginx、Certbot 和部署前容量。A-1、证书签发及续期、官网部署后回归、真实 HTTPS 认证、Seed、MinIO、ClamAV、备份恢复和部署后资源仍待 OrcaTerm 现场验收。
+2026-11-24，OrcaTerm 现场续跑总表为 `T011_SITE_RESULT=PASS`。现场固定提交为 `62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb`，最终续跑脚本 SHA-256 为 `81978563aeecf5a4cb123f557022d6bc727e741c45df74db5dcaca50b06d9837`。
+
+| 项目 | 现场结果 |
+| --- | --- |
+| 五个基础服务与数据库 | 预检、容器健康、迁移 head `0006_file_brand_assets` 和固定 Seed 均通过 |
+| ERP HTTPS | 独立 Nginx 虚拟主机、现有证书和 Certbot dry-run 通过 |
+| 官网回归 | HTTPS 主站 200，HTTP 和 www 三个入口均 301 到 HTTPS 主站 |
+| 认证与审计 | 沿用前轮 HTTPS 认证审计 PASS。原 403 为验收脚本错误，安全门禁行为正确。system.audit.view requires MFA before audit log access. 修正版验证审计员 MFA 前 403、MFA 后 200、安全事件仍 403。管理员安全事件 200 用前轮证据 |
+| 幂等性 | 沿用前轮创建、回放和冲突 PASS |
+| MinIO 与 ClamAV | 版本化合成文件、重建后下载与哈希、正常文件、EICAR 和扫描器离线判定通过 |
+| PostgreSQL 备份恢复 | 实际备份、独立恢复库、十张表行数、固定 Seed UUID 和恢复库迁移 head 通过 |
+| 最终资源 | 现场资源与官网门禁通过。截图未展示主机 RAM、Swap、Load 和磁盘具体读数 |
 
 ## 测试运行和待核验项目
 
@@ -66,8 +77,8 @@ GitHub Environment test 配置 TEST_SSH_HOST、TEST_SSH_PORT、TEST_SSH_USER、T
 
 Seed 使用 yihe_erp_seed_ 前缀的独立测试数据库。现场由受控临时方式向 Compose 的一次性 API 容器传入 ERP_SEED_DEFAULT_PASSWORD，运行 python -m yihe_api.cli seed-dev。不要在长驻 API 环境文件中保存 Seed 密码。用户认证和 MFA 验收完成后通过受控入口管理测试账号。
 
-备份脚本生成 UTC 命名的 gzip 归档与 SHA-256；恢复脚本在独立恢复库还原并核对十张表行数。实际恢复仍需核对关键固定 Seed UUID，并用连接到恢复库的隔离 API 确认数据。定时策略应每天运行备份，并保留最近七个日归档和四个周归档。
+备份脚本生成 UTC 命名的 gzip 归档与 SHA-256；恢复脚本在独立恢复库还原并核对十张表行数。现场已通过恢复库的固定 Seed UUID 校验。定时策略应每天运行备份，并保留最近七个日归档和四个周归档。
 
 ## 首次现场镜像交付
 
-GitHub Actions Artifact 存储配额问题为 DEFERRED / CI delivery optimization。首次部署使用固定提交 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb 的既有源码归档，不依赖镜像仓库。通过 OrcaTerm 手动运行 scripts/t011-build-on-host.sh，以 API、Worker、Web 顺序串行构建，使用完整 SHA 标签。构建阶段检查官网状态和容器身份，并在资源超限时取消当前 ERP 构建。现场已有 ERP HTTP bootstrap 和证书，后续继续复用。
+GitHub Actions Artifact 存储配额优化维持 DEFERRED。API 和 Worker 使用现场已构建的固定提交镜像。Web 在 GitHub Actions 构建并发布至 GHCR，manifest digest 为 `sha256:82fd993a471b99123d533ededb272c0a0db09816e7ecb380679c229343e58b4f`。现场通过校验过的离线包导入 Web、MinIO 与 ClamAV。ERP HTTPS 复用既有 HTTP bootstrap、ACME 路径和证书。
