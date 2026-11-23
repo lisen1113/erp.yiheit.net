@@ -4,6 +4,11 @@ sha=62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb
 archive="$HOME/t011-62612df-source.tar.gz"
 release="/srv/yihe-erp/releases/$sha"
 hash=2586fd78d4942a9ee0957cf0fbeef99f20256ca3b5b8211d01f57c404ffae2e4
+source_mode=${1:-docker-hub}
+[[ "$source_mode" == docker-hub || "$source_mode" == official-alternate ]]
+python_ref=public.ecr.aws/docker/library/python@sha256:0f086103b026048cc50cb5da25ec435c023c5241a83fc44daea593377abc61c4
+node_ref=public.ecr.aws/docker/library/node@sha256:0e2646ab57e77b7a384a0cb59b6815b182c77e1f9c3ba36bd8435bd9c4e6680e
+uv_ref=ghcr.io/astral-sh/uv@sha256:49fe3c925d4b7a84ba2ef19883307bba2bbcf929a22040afb46f2dd092d13aeb
 [[ "$(uname -m)" == x86_64 ]]
 sudo -n true
 printf '%s  %s\n' "$hash" "$archive" | sha256sum -c -
@@ -96,10 +101,27 @@ for service in api worker web; do
   snapshot
   context="$release"
   [[ "$service" != worker ]] || context="$release/apps/worker"
+  dockerfile="$release/apps/$service/Dockerfile"
+  if [[ "$source_mode" == official-alternate ]]; then
+    # The legacy Docker builder requires its Dockerfile inside the build context.
+    # Stage a verified copy in the temporary workspace; keep the release untouched.
+    build_context="$work"
+    [[ "$service" != worker ]] || build_context="$work/apps/worker"
+    context="$build_context"
+    dockerfile="$build_context/Dockerfile.t011-pinned"
+    sed -e "s|^FROM python:3.12-slim-bookworm$|FROM $python_ref|" \
+      -e "s|^FROM node:24-bookworm-slim$|FROM $node_ref|" \
+      -e "s|^COPY --from=ghcr.io/astral-sh/uv:0.13.9 |COPY --from=$uv_ref |" \
+      "$release/apps/$service/Dockerfile" > "$dockerfile"
+    base=$python_ref
+    [[ "$service" != web ]] || base=$node_ref
+    grep -Fxq "FROM $base" "$dockerfile"
+    if [[ "$service" == api ]]; then grep -Fq "COPY --from=$uv_ref " "$dockerfile"; fi
+  fi
   build_started=$SECONDS
   sudo -n docker build --platform linux/amd64 \
     --label "org.opencontainers.image.revision=$sha" \
-    -t "$tag" -f "$release/apps/$service/Dockerfile" "$context" &
+    -t "$tag" -f "$dockerfile" "$context" &
   build_pid=$!
   while kill -0 "$build_pid" 2>/dev/null; do
     sleep 5
