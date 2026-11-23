@@ -13,7 +13,14 @@ if [[ "$BOOTSTRAP_HTTPS" == true || -n "${ACME_EMAIL:-}" ]]; then
 fi
 
 tmp=$(mktemp -d)
-trap 'rm -rf -- "$tmp"' EXIT
+destination=
+cleanup() {
+  if [[ "$destination" =~ ^/tmp/yihe-erp-test\.[a-zA-Z0-9]+$ ]]; then
+    "${remote[@]}" "rm -rf -- '$destination'" >/dev/null || true
+  fi
+  rm -rf -- "$tmp"
+}
+trap cleanup EXIT
 printf '%s\n' "$TEST_KEY" > "$tmp/key"
 printf '%s\n' "$TEST_KNOWN_HOSTS" > "$tmp/known_hosts"
 unset TEST_KEY TEST_KNOWN_HOSTS

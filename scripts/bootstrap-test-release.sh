@@ -210,7 +210,14 @@ if [[ "$bootstrap" == true ]]; then
   install -d -m 0755 "$(dirname "$hook")"
   install -m 0755 infra/nginx/certbot-erp-reload.sh "$hook"
   hook_created=true
-  certbot renew --cert-name "$domain" --dry-run --no-directory-hooks --run-deploy-hooks --deploy-hook "$hook"
+  for config in /etc/letsencrypt/cli.ini "/etc/letsencrypt/renewal/$domain.conf"; do
+    if [[ -f "$config" ]] && grep -Eqi '^[[:space:]]*(pre[-_]hook|post[-_]hook)[[:space:]]*=' "$config"; then
+      printf 'Unexpected Certbot pre/post hook in %s\n' "$config" >&2
+      exit 1
+    fi
+  done
+  certbot renew --cert-name "$domain" --dry-run --no-directory-hooks
+  RENEWED_LINEAGE="$lineage" "$hook"
   check_website
 fi
 

@@ -70,9 +70,16 @@ if os.environ.get("T011_BOOTSTRAP_HTTPS") == "true":
     secret = urllib.parse.parse_qs(urllib.parse.urlsplit(setup["otpauth_uri"]).query)["secret"][0]
     mfa, _ = call(admin, "auth/mfa/enable", 200, body={"code": pyotp.TOTP(secret).now(), "challenge": challenge})
     token = mfa["access_token"]
-    call(admin, "audit-logs", 200, method="GET", token=token)
+    call(admin, "audit-logs", 403, method="GET", token=token)
     call(admin, "security-events", 200, method="GET", token=token)
     call(admin, "auth/logout", 204, token=token)
+
+auditor = client()
+login, _ = call(auditor, "auth/login", 200, body={"username": "demo-e009", "password": PASSWORD})
+token = login["access_token"]
+call(auditor, "audit-logs", 200, method="GET", token=token)
+call(auditor, "security-events", 403, method="GET", token=token)
+call(auditor, "auth/logout", 204, token=token)
 
 print("HTTPS login, cookie flags, refresh, CSRF, RBAC and logout passed.")
 if os.environ.get("T011_BOOTSTRAP_HTTPS") == "true":
