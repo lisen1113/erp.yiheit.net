@@ -100,9 +100,7 @@ token = login["access_token"]
 call(auditor, "audit-logs", 403, method="GET", token=token)
 setup, _ = call(auditor, "auth/mfa/setup", 200, body={"password": PASSWORD}, token=token)
 secret = urllib.parse.parse_qs(urllib.parse.urlsplit(setup["otpauth_uri"]).query)["secret"][0]
-mfa, _ = call(
-    auditor, "auth/mfa/enable", 200, body={"code": pyotp.TOTP(secret).now()}, token=token
-)
+mfa, _ = call(auditor, "auth/mfa/enable", 200, body={"code": pyotp.TOTP(secret).now()}, token=token)
 token = mfa["access_token"]
 call(auditor, "audit-logs", 200, method="GET", token=token)
 call(auditor, "security-events", 403, method="GET", token=token)
