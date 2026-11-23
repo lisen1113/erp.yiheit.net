@@ -37,6 +37,7 @@ jobs:
       - name: Validate T011 test deployment configuration
         run: |
           bash -n scripts/deploy-test.sh
+          bash -n scripts/t011-a1-bootstrap-http.sh
           bash -n scripts/bootstrap-test-release.sh
           bash -n scripts/dispatch-test-release.sh
           bash -n scripts/smoke-test-storage.sh

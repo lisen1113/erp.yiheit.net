@@ -4,55 +4,106 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: Full SHA of the reviewed deployment commit
-        type: string
+        description: Full 40-character SHA at the tip of the selected target branch
         required: true
+        type: string
       bootstrap_https:
-        description: Create the ERP virtual host and certificate on a fresh test host
-        type: boolean
+        description: Select first-time HTTPS bootstrap for the later deployment
         default: false
+        type: boolean
+      target_ref:
+        description: Target branch to validate
+        required: true
+        type: choice
+        options:
+          - main
+          - codex/t011-test-deployment
 
-permissions:
-  actions: read
-  contents: read
+permissions: {}
 
 concurrency:
   group: yihe-erp-test-deploy
   cancel-in-progress: false
 
 jobs:
-  verify:
+  validate:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/t011-test-deployment'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     outputs:
-      approved: ${{ steps.gate.outputs.approved }}
+      commit_sha: ${{ steps.verify.outputs.commit_sha }}
+      target_ref: ${{ steps.verify.outputs.target_ref }}
     steps:
-      - name: Verify exact ref, SHA and successful CI
-        id: gate
+      - name: Verify the approved target, exact SHA and CI
+        id: verify
+        shell: bash
         env:
-          EXPECTED_SHA: ${{ inputs.commit_sha }}
           GH_TOKEN: ${{ github.token }}
+          TARGET_REF: ${{ inputs.target_ref }}
+          EXPECTED_SHA: ${{ inputs.commit_sha }}
         run: |
           set -euo pipefail
-          case "$GITHUB_REF" in
-            refs/heads/main|refs/heads/codex/t011-test-deployment) ;;
-            *) exit 1 ;;
+          case "$TARGET_REF" in
+            main|codex/t011-test-deployment) ;;
+            *) echo 'Target branch is not allowed' >&2; exit 1 ;;
           esac
-          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ && "$EXPECTED_SHA" == "$GITHUB_SHA" ]]
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Provide a full lowercase 40-character commit SHA' >&2
+            exit 1
+          fi
+          target_head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_REF" --jq '.object.sha')
+          if [[ "$target_head" != "$EXPECTED_SHA" ]]; then
+            echo 'SHA does not match the current target branch tip' >&2
+            exit 1
+          fi
           gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
-            --branch "$GITHUB_REF_NAME" --event push --commit "$GITHUB_SHA" \
-            --json conclusion --jq 'any(.[]; .conclusion == "success")' | grep -qx true
-          echo 'approved=true' >> "$GITHUB_OUTPUT"
+            --branch "$TARGET_REF" --event push --commit "$EXPECTED_SHA" \
+            --json headSha,conclusion \
+            --jq "any(.[]; .headSha == \"$EXPECTED_SHA\" and .conclusion == \"success\")" \
+            | grep -qx true
+          printf 'commit_sha=%s\ntarget_ref=%s\n' "$EXPECTED_SHA" "$TARGET_REF" >> "$GITHUB_OUTPUT"
+
+  register:
+    if: needs.validate.result == 'success' && vars.TEST_DEPLOY_ACTIVATED != 'true'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Record the validated deployment intent
+        shell: bash
+        env:
+          TARGET_REF: ${{ needs.validate.outputs.target_ref }}
+          EXPECTED_SHA: ${{ needs.validate.outputs.commit_sha }}
+          BOOTSTRAP_HTTPS: ${{ inputs.bootstrap_https }}
+        run: |
+          set -euo pipefail
+          printf 'Validated target: %s\nValidated SHA: %s\nRequested HTTPS bootstrap: %s\n' \
+            "$TARGET_REF" "$EXPECTED_SHA" "$BOOTSTRAP_HTTPS"
+          echo 'NOT YET ACTIVATED. Recorded deployment intent only.'
 
   deploy:
-    needs: verify
-    if: needs.verify.outputs.approved == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/t011-test-deployment')
+    needs: validate
+    if: needs.validate.result == 'success' && vars.TEST_DEPLOY_ACTIVATED == 'true'
+    permissions:
+      contents: read
+      actions: read
     runs-on: ${{ vars.TEST_RUNNER_LABEL || 'yihe-erp-test' }}
     environment: test
     timeout-minutes: 60
     steps:
+      - name: Recheck target tip after Environment approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_REF: ${{ needs.validate.outputs.target_ref }}
+          EXPECTED_SHA: ${{ needs.validate.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_REF" --jq '.object.sha')" == "$EXPECTED_SHA" ]]
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ inputs.commit_sha }}
+          ref: ${{ needs.validate.outputs.commit_sha }}
           persist-credentials: false
       - name: Build and deploy the verified release
         env:
@@ -61,7 +112,7 @@ jobs:
           TEST_USER: ${{ secrets.TEST_SSH_USER }}
           TEST_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
           TEST_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
-          EXPECTED_SHA: ${{ inputs.commit_sha }}
+          EXPECTED_SHA: ${{ needs.validate.outputs.commit_sha }}
           BOOTSTRAP_HTTPS: ${{ inputs.bootstrap_https }}
           ACME_EMAIL: ${{ vars.TEST_ACME_EMAIL }}
         run: bash scripts/dispatch-test-release.sh

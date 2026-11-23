@@ -26,3 +26,7 @@ pnpm contracts:check
 本地容器开发环境见 [Docker Compose 使用说明](infra/README.md)。
 
 开发治理和交付流程见 [开发工作流](docs/development-workflow.md)，合成数据和命令见 [种子数据](docs/seed-data.md)。
+
+## 测试部署
+
+T011 现场部署、验收与 GitHub Actions 启用条件见 [测试部署文档](docs/deployment-test.md)。
