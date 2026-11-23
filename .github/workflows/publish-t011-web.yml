@@ -1,0 +1,81 @@
+name: Publish T011 Web image
+
+on:
+  push:
+    branches: [codex/t011-test-deployment]
+    paths: [.github/workflows/publish-t011-web.yml]
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+concurrency:
+  group: t011-62612df-web-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'lisen1113/erp.yiheit.net'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      RELEASE_SHA: 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb
+      IMAGE: ghcr.io/lisen1113/erp.yiheit.net/yihe-erp-web
+      NODE_BASE: public.ecr.aws/docker/library/node@sha256:0e2646ab57e77b7a384a0cb59b6815b182c77e1f9c3ba36bd8435bd9c4e6680e
+    steps:
+      - name: Verify CI for the pinned source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=codex%2Ft011-test-deployment&event=push&head_sha=$RELEASE_SHA&status=success" \
+            --jq ".workflow_runs | any(.head_sha == \"$RELEASE_SHA\" and .conclusion == \"success\")" | grep -qx true
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - name: Build and verify the Web image
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_SHA" && "$(uname -m)" == x86_64 ]]
+          context=$(mktemp -d)
+          trap 'rm -rf -- "$context"' EXIT
+          git archive "$RELEASE_SHA" | tar -xf - -C "$context"
+          dockerfile="$context/apps/web/Dockerfile"
+          grep -Fxq 'FROM node:24-bookworm-slim' "$dockerfile"
+          sed -i "s|^FROM node:24-bookworm-slim$|FROM $NODE_BASE|" "$dockerfile"
+          [[ "$(grep -c '^FROM ' "$dockerfile")" == 1 ]]
+          grep -Fxq 'RUN pnpm --filter @yihe/web build' "$dockerfile"
+          tag="$IMAGE:$RELEASE_SHA"
+          docker build --platform linux/amd64 \
+            --label "org.opencontainers.image.revision=$RELEASE_SHA" \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            -t "$tag" -f "$dockerfile" "$context"
+          [[ "$(docker image inspect -f '{{.Os}}/{{.Architecture}}' "$tag")" == linux/amd64 ]]
+          docker image inspect "$tag" | jq -e '
+            (.[0].Config.Env // []) |
+            all(test("(^|_)(PASSWORD|TOKEN|SECRET|PRIVATE_KEY|JWT_KEY|MFA_KEY|IDENTIFIER_KEY)="; "i") | not)
+          ' >/dev/null
+          docker run --rm --network none --entrypoint sh "$tag" -ec '
+            test -d /app/apps/web/.next
+            test -z "$(find /app -type f \( -name .env -o -name test.env -o -name "*.key" -o -name "*.pem" -o -name id_ed25519 -o -name id_rsa \) -print -quit)"
+          '
+      - name: Publish and verify the GHCR manifest
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d)
+          trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          unset GHCR_TOKEN
+          tag="$IMAGE:$RELEASE_SHA"
+          docker push "$tag"
+          pinned=$(docker image inspect "$tag" | jq -er --arg prefix "$IMAGE@" '
+            .[0].RepoDigests | map(select(startswith($prefix))) | if length == 1 then .[0] else error("ambiguous digest") end')
+          [[ "${pinned#*@}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          docker manifest inspect "$pinned" >/dev/null
+          echo "::notice title=T011 Web manifest::$pinned"
+          docker image inspect "$tag" -f 'Image ID {{.Id}} Size {{.Size}} bytes Platform {{.Os}}/{{.Architecture}}'
