@@ -137,9 +137,12 @@ def test_scope_metadata_filters_and_authenticated_rejection(identity_fixture):  
     assert client.get(BASE + "/security-events", headers=headers).status_code == 403
     with session_factory().begin() as db:
         own = db.get(User, user)
-        own.mfa_enabled = True
-        db.get(AuthSession, session).mfa_verified = True
         grant(db, own, "system.audit.view", "company")
+    # system.audit.view requires MFA before audit log access.
+    assert client.get(BASE + "/audit-logs", headers=headers).status_code == 403
+    with session_factory().begin() as db:
+        db.get(User, user).mfa_enabled = True
+        db.get(AuthSession, session).mfa_verified = True
         other = create_company(db)
         for key in (company, other):
             audit_change(
