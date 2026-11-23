@@ -27,4 +27,25 @@ UNION ALL SELECT 'idempotency_record', count(*) FROM idempotency_record
 UNION ALL SELECT 'file_asset', count(*) FROM file_asset
 UNION ALL SELECT 'brand_asset', count(*) FROM brand_asset;
 SQL
+"${compose[@]}" run --rm --no-deps -T -e "POSTGRES_DB=$restore_db" api python - <<'PY'
+from sqlalchemy import select
+
+from yihe_api.auth.models import Employee, User
+from yihe_api.db.models import Company
+from yihe_api.db.session import DatabaseSettings, make_engine, make_session_factory
+from yihe_api.dev_seed import COMPANY_ID, PEOPLE, seed_id
+
+engine = make_engine(DatabaseSettings.from_environment())
+with make_session_factory(engine)() as session:
+    if session.get(Company, COMPANY_ID) is None:
+        raise SystemExit("Restore is missing the fixed Seed company")
+    for code, _, _ in PEOPLE:
+        employee_id = seed_id("employee", code)
+        user = session.scalar(
+            select(User).where(User.id == seed_id("user", code), User.employee_id == employee_id)
+        )
+        if session.get(Employee, employee_id) is None or user is None:
+            raise SystemExit(f"Restore is missing a fixed employee/user binding: {code}")
+print("Fixed company and employee/user Seed UUIDs verified")
+PY
 printf 'Restored database retained for isolated API verification: %s\n' "$restore_db"
