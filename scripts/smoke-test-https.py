@@ -16,7 +16,8 @@ PASSWORD = Path(os.environ["T011_SEED_PASSWORD_FILE"]).read_text().strip()
 
 def client():
     return urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+        urllib.request.ProxyHandler({}),
+        urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),
     )
 
 
@@ -44,7 +45,9 @@ def call(opener, path, expected, *, body=None, method="POST", origin=ORIGIN, tok
 
 
 browser = client()
-login, headers = call(browser, "auth/login", 200, body={"username": "demo-e005", "password": PASSWORD})
+login, headers = call(
+    browser, "auth/login", 200, body={"username": "demo-e005", "password": PASSWORD}
+)
 token = login["access_token"]
 cookie = headers.get("Set-Cookie", "").lower()
 for attribute in ("secure", "httponly", "samesite=lax", "path=/api/v1/auth"):
@@ -66,9 +69,16 @@ if os.environ.get("T011_BOOTSTRAP_HTTPS") == "true":
     if login["status"] != "mfa_setup_required":
         raise SystemExit("Seed administrator did not require MFA enrollment")
     challenge = login["challenge"]
-    setup, _ = call(admin, "auth/mfa/setup", 200, body={"password": PASSWORD, "challenge": challenge})
+    setup, _ = call(
+        admin, "auth/mfa/setup", 200, body={"password": PASSWORD, "challenge": challenge}
+    )
     secret = urllib.parse.parse_qs(urllib.parse.urlsplit(setup["otpauth_uri"]).query)["secret"][0]
-    mfa, _ = call(admin, "auth/mfa/enable", 200, body={"code": pyotp.TOTP(secret).now(), "challenge": challenge})
+    mfa, _ = call(
+        admin,
+        "auth/mfa/enable",
+        200,
+        body={"code": pyotp.TOTP(secret).now(), "challenge": challenge},
+    )
     token = mfa["access_token"]
     call(admin, "audit-logs", 403, method="GET", token=token)
     call(admin, "security-events", 200, method="GET", token=token)
