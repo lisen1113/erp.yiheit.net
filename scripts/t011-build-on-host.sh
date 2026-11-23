@@ -5,7 +5,7 @@ archive="$HOME/t011-62612df-source.tar.gz"
 release="/srv/yihe-erp/releases/$sha"
 hash=2586fd78d4942a9ee0957cf0fbeef99f20256ca3b5b8211d01f57c404ffae2e4
 source_mode=${1:-docker-hub}
-[[ "$source_mode" == docker-hub || "$source_mode" == official-alternate ]]
+[[ "$source_mode" == docker-hub || "$source_mode" == official-alternate || "$source_mode" == offline-python ]]
 python_ref=public.ecr.aws/docker/library/python@sha256:0f086103b026048cc50cb5da25ec435c023c5241a83fc44daea593377abc61c4
 node_ref=public.ecr.aws/docker/library/node@sha256:0e2646ab57e77b7a384a0cb59b6815b182c77e1f9c3ba36bd8435bd9c4e6680e
 uv_ref=ghcr.io/astral-sh/uv@sha256:49fe3c925d4b7a84ba2ef19883307bba2bbcf929a22040afb46f2dd092d13aeb
@@ -14,6 +14,12 @@ sudo -n true
 printf '%s  %s\n' "$hash" "$archive" | sha256sum -c -
 exec 9<"$archive"
 flock -n 9
+offline_archive="$HOME/t011-62612df-python-wheels.tar.gz"
+if [[ "$source_mode" == offline-python ]]; then
+  offline_hash=${2:?Supply the verified bundle SHA-256}
+  [[ "$offline_hash" =~ ^[0-9a-f]{64}$ ]]
+  printf '%s  %s\n' "$offline_hash" "$offline_archive" | sha256sum -c -
+fi
 work=$(mktemp -d)
 build_pid=
 cleanup() {
@@ -102,7 +108,7 @@ for service in api worker web; do
   context="$release"
   [[ "$service" != worker ]] || context="$release/apps/worker"
   dockerfile="$release/apps/$service/Dockerfile"
-  if [[ "$source_mode" == official-alternate ]]; then
+  if [[ "$source_mode" != docker-hub ]]; then
     # The legacy Docker builder requires its Dockerfile inside the build context.
     # Stage a verified copy in the temporary workspace; keep the release untouched.
     build_context="$work"
@@ -118,8 +124,20 @@ for service in api worker web; do
     grep -Fxq "FROM $base" "$dockerfile"
     if [[ "$service" == api ]]; then grep -Fq "COPY --from=$uv_ref " "$dockerfile"; fi
   fi
+  build_options=()
+  if [[ "$source_mode" == offline-python && "$service" != web ]]; then
+    mkdir "$context/.t011-python"
+    tar -xzf "$offline_archive" -C "$context/.t011-python"
+    if [[ "$service" == api ]]; then
+      sed -i '/^RUN uv sync --locked --no-dev --all-packages --no-editable$/c\COPY .t011-python/ /tmp/t011-python/\nRUN python -m venv /app/.venv && /app/.venv/bin/pip install --no-index --find-links /tmp/t011-python/api --no-deps --require-hashes -r /tmp/t011-python/api-requirements.txt && /app/.venv/bin/pip install --no-index --no-deps /tmp/t011-python/api/yihe_erp_api-0.1.0-py3-none-any.whl && /app/.venv/bin/pip check' "$dockerfile"
+    else
+      sed -i '/^RUN pip install --no-cache-dir --require-hashes -r requirements.txt$/c\COPY .t011-python/ /tmp/t011-python/\nRUN pip install --no-index --find-links /tmp/t011-python/worker --no-deps --require-hashes -r /tmp/t011-python/worker-requirements.txt && pip check' "$dockerfile"
+    fi
+    grep -Fq ' --no-index ' "$dockerfile"
+    build_options+=(--network none)
+  fi
   build_started=$SECONDS
-  sudo -n docker build --platform linux/amd64 \
+  sudo -n docker build --platform linux/amd64 "${build_options[@]}" \
     --label "org.opencontainers.image.revision=$sha" \
     -t "$tag" -f "$dockerfile" "$context" &
   build_pid=$!
@@ -129,6 +147,9 @@ for service in api worker web; do
   done
   wait "$build_pid"
   build_pid=
+  if [[ "$source_mode" == offline-python && "$service" != web ]]; then
+    rm -rf -- "$context/.t011-python"
+  fi
   printf '\nBuild duration: %ss\n' "$((SECONDS-build_started))"
   sudo -n docker image inspect -f '{{index .RepoTags 0}} {{.Id}} {{.Size}} bytes {{.Os}}/{{.Architecture}}' "$tag"
   printf '\n== After build: %s ==\n' "$tag"
