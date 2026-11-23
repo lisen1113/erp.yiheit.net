@@ -27,9 +27,10 @@ check_website
 "${compose[@]}" pull
 "${compose[@]}" up -d --wait postgres redis
 bash "$root/app/scripts/backup-test.sh"
+"${compose[@]}" run --rm --no-deps api alembic heads | grep -Fx '0006_file_brand_assets (head)'
 "${compose[@]}" run --rm --no-deps api alembic current
 "${compose[@]}" run --rm --no-deps api alembic upgrade head
-"${compose[@]}" up -d --wait api web
+"${compose[@]}" up -d --wait api web worker
 curl --max-time 15 --fail --silent --show-error https://erp.yiheit.net/api/health
 curl --max-time 15 --fail --silent --show-error https://erp.yiheit.net/api/ready
 curl --max-time 15 --fail --silent --show-error https://erp.yiheit.net/ | grep -F 'TEST / 测试环境' >/dev/null

@@ -72,6 +72,40 @@ services:
       interval: 5s
       timeout: 4s
       retries: 20
+  worker: &queue
+    <<: *runtime
+    image: ${ERP_WORKER_IMAGE:?Set the Celery worker digest}
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+    command: ["-Q", "default", "--hostname=default@%h"]
+    mem_limit: 384m
+    mem_reservation: 192m
+    networks: [data]
+    depends_on:
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A worker:app inspect ping --timeout=3 -d default@$$HOSTNAME"]
+      interval: 30s
+      timeout: 8s
+      retries: 5
+  worker-import:
+    <<: *queue
+    profiles: [import]
+    command: ["-Q", "import", "--hostname=import@%h"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A worker:app inspect ping --timeout=3 -d import@$$HOSTNAME"]
+  worker-export:
+    <<: *queue
+    profiles: [export]
+    command: ["-Q", "export", "--hostname=export@%h"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A worker:app inspect ping --timeout=3 -d export@$$HOSTNAME"]
+  worker-print:
+    <<: *queue
+    profiles: [print]
+    command: ["-Q", "print", "--hostname=print@%h"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A worker:app inspect ping --timeout=3 -d print@$$HOSTNAME"]
 networks:
   edge:
   data:
