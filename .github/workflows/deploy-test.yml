@@ -2,6 +2,15 @@ name: Deploy ERP test
 
 on:
   workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full SHA of the reviewed deployment commit
+        type: string
+        required: true
+      bootstrap_https:
+        description: Create the ERP virtual host and certificate on a fresh test host
+        type: boolean
+        default: false
 
 permissions:
   actions: read
@@ -12,37 +21,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    if: github.ref == 'refs/heads/main'
+  verify:
     runs-on: ubuntu-latest
-    environment: test
+    outputs:
+      approved: ${{ steps.gate.outputs.approved }}
     steps:
-      - name: Verify CI passed for this main commit
+      - name: Verify exact ref, SHA and successful CI
+        id: gate
         env:
+          EXPECTED_SHA: ${{ inputs.commit_sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          case "$GITHUB_REF" in
+            refs/heads/main|refs/heads/codex/t011-test-deployment) ;;
+            *) exit 1 ;;
+          esac
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ && "$EXPECTED_SHA" == "$GITHUB_SHA" ]]
           gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
-            --branch main --event push --commit "$GITHUB_SHA" \
+            --branch "$GITHUB_REF_NAME" --event push --commit "$GITHUB_SHA" \
             --json conclusion --jq 'any(.[]; .conclusion == "success")' | grep -qx true
-      - name: Deploy the staged test revision
+          echo 'approved=true' >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: verify
+    if: needs.verify.outputs.approved == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/t011-test-deployment')
+    runs-on: ${{ vars.TEST_RUNNER_LABEL || 'yihe-erp-test' }}
+    environment: test
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+      - name: Build and deploy the verified release
         env:
           TEST_HOST: ${{ secrets.TEST_SSH_HOST }}
           TEST_PORT: ${{ secrets.TEST_SSH_PORT }}
           TEST_USER: ${{ secrets.TEST_SSH_USER }}
           TEST_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
           TEST_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
-        run: |
-          set -euo pipefail
-          : "${TEST_HOST:?Missing TEST_SSH_HOST}" "${TEST_PORT:?Missing TEST_SSH_PORT}"
-          : "${TEST_USER:?Missing TEST_SSH_USER}" "${TEST_KEY:?Missing TEST_SSH_PRIVATE_KEY}"
-          : "${TEST_KNOWN_HOSTS:?Missing TEST_SSH_KNOWN_HOSTS}"
-          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
-          umask 077
-          ssh_dir=$(mktemp -d)
-          trap 'rm -f -- "$ssh_dir/key" "$ssh_dir/known_hosts"; rmdir -- "$ssh_dir"' EXIT
-          printf '%s\n' "$TEST_KEY" > "$ssh_dir/key"
-          printf '%s\n' "$TEST_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
-          ssh -p "$TEST_PORT" -i "$ssh_dir/key" \
-            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$ssh_dir/known_hosts" -- "$TEST_USER@$TEST_HOST" \
-            "test \"\$(git -C /srv/yihe-erp/app rev-parse HEAD)\" = '$GITHUB_SHA' && bash /srv/yihe-erp/app/scripts/deploy-test.sh"
+          EXPECTED_SHA: ${{ inputs.commit_sha }}
+          BOOTSTRAP_HTTPS: ${{ inputs.bootstrap_https }}
+          ACME_EMAIL: ${{ vars.TEST_ACME_EMAIL }}
+        run: bash scripts/dispatch-test-release.sh

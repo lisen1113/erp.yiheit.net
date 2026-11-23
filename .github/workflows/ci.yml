@@ -37,6 +37,10 @@ jobs:
       - name: Validate T011 test deployment configuration
         run: |
           bash -n scripts/deploy-test.sh
+          bash -n scripts/bootstrap-test-release.sh
+          bash -n scripts/dispatch-test-release.sh
+          bash -n scripts/smoke-test-storage.sh
+          python -c "import ast; from pathlib import Path; ast.parse(Path('scripts/smoke-test-https.py').read_text())"
           bash -n scripts/backup-test.sh
           bash -n scripts/restore-test.sh
           bash -n scripts/retain-test-backups.sh

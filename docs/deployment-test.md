@@ -33,3 +33,48 @@ GitHub Environment test 配置 TEST_SSH_HOST、TEST_SSH_PORT、TEST_SSH_USER、T
 Seed 使用 yihe_erp_seed_ 前缀的独立测试数据库。现场由受控临时方式向 Compose 的一次性 API 容器传入 ERP_SEED_DEFAULT_PASSWORD，运行 python -m yihe_api.cli seed-dev。不要在长驻 API 环境文件中保存 Seed 密码。用户认证和 MFA 验收完成后通过受控入口管理测试账号。
 
 备份脚本生成 UTC 命名的 gzip 归档与 SHA-256；恢复脚本在独立恢复库还原并核对十张表行数。实际恢复仍需核对关键固定 Seed UUID，并用连接到恢复库的隔离 API 确认数据。定时策略应每天运行备份，并保留最近七个日归档和四个周归档。
+
+## GitHub Actions 首次部署
+
+部署分支临时允许 main 和 codex/t011-test-deployment，要求指定完整 SHA 与触发事件、成功的 push CI、检出提交完全一致。部署任务使用 test Environment 和独立并发锁。PR #11 合并后恢复仅允许 main，并从 test 的部署分支规则移除临时分支。
+
+GitHub 要求 workflow_dispatch 的工作流文件已经存在于默认分支。当前 PR #11 保持 Draft，main 尚未注册 deploy-test.yml，首次点按或 gh dispatch 仍受这一条件阻断。要在 #11 合并前执行，需另行批准在 main 注册同名、仅触发且不含部署步骤的入口。该入口可以通过独立 PR 审查；实际部署逻辑由选择的 T011 分支提供。
+
+### 一次性配置
+
+推荐在独立受控 Linux 主机上注册仓库 self-hosted runner，添加 yihe-erp-test 标签。该主机需要 Bash、Git、Docker、OpenSSH 及到测试主机 22 端口的已授权网络路径。将 runner 限于受信任仓库工作流。仓库的 PR CI 继续使用 GitHub-hosted runner。备选方案是有固定出口或受控私网连接的 GitHub-hosted runner，只允许该来源按维护窗口访问 SSH，完成后撤销临时访问。不使用全网 SSH 白名单。
+
+生成独立部署 Key：
+
+    ssh-keygen -t ed25519 -f ~/.ssh/yihe-erp-github-test -C yihe-erp-github-test -N ''
+
+将 yihe-erp-github-test.pub 的单行加入授权部署用户的 authorized_keys。可按 runner 固定源地址使用 from= 限制，并禁用端口、agent 和 X11 转发及 PTY。该部署账户需要批准的非交互 sudo，且能在服务器上使用 Docker、Nginx、Certbot、curl、jq、OpenSSL 和 Python 3。独立 Key 的无扩展名文件直接填入 GitHub Environment Secret，禁止复用个人密钥或发到聊天。
+
+从已核验的本机 known_hosts 提取主机条目。先核对指纹，再复制完整行，禁止直接信任未核验的 ssh-keyscan 输出：
+
+    ssh-keygen -F 106.54.124.168 -f ~/.ssh/known_hosts
+    ssh-keygen -F 106.54.124.168 -f ~/.ssh/known_hosts | grep -v '^#' | ssh-keygen -lf -
+
+若使用自定义端口，查询名称使用 [服务器地址]:端口，并与 TEST_SSH_HOST 和 TEST_SSH_PORT 一致。
+
+在 Settings → Environments → test 中限制 deployment branches 仅允许 main 与 codex/t011-test-deployment，并设置：
+
+| 名称 | 类型与用途 |
+| --- | --- |
+| TEST_SSH_HOST | Secret，测试服务器地址 |
+| TEST_SSH_PORT | Secret，SSH 端口 |
+| TEST_SSH_USER | Secret，授权部署账户 |
+| TEST_SSH_PRIVATE_KEY | Secret，独立 CI 部署私钥全文 |
+| TEST_SSH_KNOWN_HOSTS | Secret，已核验主机公钥条目全文 |
+| TEST_ACME_EMAIL | Variable，首次签发所用的运维邮箱 |
+| TEST_RUNNER_LABEL | 可选 Variable，默认 yihe-erp-test |
+
+PostgreSQL、JWT、MFA、审计 HMAC 和 Seed 凭据由目标服务器首次生成，权限为 0600，后续复用。应用镜像由 runner 从精确提交构建并通过 SSH 分发，服务器无需额外镜像仓库 Secret。
+
+### 触发
+
+注册默认分支入口后，Actions → Deploy ERP test → Run workflow。选择 codex/t011-test-deployment，填入已通过 CI 的完整 SHA，首次勾选 bootstrap_https。等价命令：
+
+    gh workflow run deploy-test.yml --ref codex/t011-test-deployment -f commit_sha=完整40位SHA -F bootstrap_https=true
+
+后续从允许分支执行同一操作时将 bootstrap_https 改为 false。后续模式要求 ERP 站点、证书、部署指针和受保护环境文件已存在，直接复用。已有未知配置、证书或项目资源时，首次模式停止。
