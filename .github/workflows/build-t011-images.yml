@@ -1,0 +1,87 @@
+name: Build T011 deployment images
+
+on:
+  push:
+    branches: [codex/t011-test-deployment]
+    paths: [.github/workflows/build-t011-images.yml]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: t011-62612df-image-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'lisen1113/erp.yiheit.net'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      RELEASE_SHA: 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb
+      ARCHIVE: t011-62612df-images.tar.gz
+    steps:
+      - name: Verify complete CI for the fixed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=codex%2Ft011-test-deployment&event=push&head_sha=$RELEASE_SHA&status=success" \
+            --jq ".workflow_runs | any(.head_sha == \"$RELEASE_SHA\" and .conclusion == \"success\")" | grep -qx true
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+          persist-credentials: false
+      - name: Build and inspect three linux/amd64 images
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_SHA" ]]
+          [[ "$(uname -m)" == x86_64 ]]
+          src=$(mktemp -d)
+          git archive "$RELEASE_SHA" | tar -xf - -C "$src"
+          if git ls-tree -r --name-only "$RELEASE_SHA" | grep -Ei '(^|/)(\.env|test\.env|[^/]*\.(pem|key|p12|pfx)|id_(rsa|ed25519))$'; then
+            echo 'Unexpected secret-bearing path in release source' >&2
+            exit 1
+          fi
+          images=()
+          for service in api web worker; do
+            tag="yihe-erp-$service:$RELEASE_SHA"
+            context="$src"
+            if [[ "$service" == worker ]]; then context="$src/apps/worker"; fi
+            docker build --platform linux/amd64 --label "org.opencontainers.image.revision=$RELEASE_SHA" \
+              -t "$tag" -f "$src/apps/$service/Dockerfile" "$context"
+            [[ "$(docker image inspect -f '{{.Os}}/{{.Architecture}}' "$tag")" == linux/amd64 ]]
+            docker image inspect "$tag" | jq -e --arg sha "$RELEASE_SHA" '
+              .[0].Config as $config |
+              $config.Labels["org.opencontainers.image.revision"] == $sha and
+              (($config.Env // []) | all(test("(^|_)(PASSWORD|TOKEN|SECRET|PRIVATE_KEY|JWT_KEY|MFA_KEY|IDENTIFIER_KEY)="; "i") | not))
+            ' >/dev/null
+            docker run --rm --network none --entrypoint sh "$tag" -ec '
+              forbidden=$(find /app -type f \( -name .env -o -name test.env -o -name "*.key" -o -name "*.pem" -o -name "*.pfx" -o -name "*.p12" -o -name id_ed25519 -o -name id_rsa \) ! -path "*/site-packages/certifi/cacert.pem" ! -path "*/site-packages/botocore/cacert.pem" -print -quit)
+              if [ -n "$forbidden" ]; then
+                printf "Unexpected runtime credential path: %s\n" "$forbidden" >&2
+                exit 1
+              fi
+            '
+            image_id=$(docker image inspect -f '{{.Id}}' "$tag")
+            echo "::notice title=T011 image::$tag $image_id linux/amd64"
+            images+=("$tag")
+          done
+          mkdir -p dist
+          docker save "${images[@]}" | gzip -n > "dist/$ARCHIVE"
+          gzip -t "dist/$ARCHIVE"
+          (cd dist && sha256sum "$ARCHIVE" > "$ARCHIVE.sha256")
+          hash=$(cut -d ' ' -f1 "dist/$ARCHIVE.sha256")
+          size=$(stat -c '%s' "dist/$ARCHIVE")
+          echo "::notice title=T011 image archive::$ARCHIVE sha256=$hash bytes=$size revision=$RELEASE_SHA"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: t011-images-linux-amd64-${{ env.RELEASE_SHA }}
+          path: |
+            dist/t011-62612df-images.tar.gz
+            dist/t011-62612df-images.tar.gz.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30

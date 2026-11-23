@@ -1,0 +1,48 @@
+# Optional services, enabled for short acceptance windows on the shared host.
+services:
+  minio:
+    image: ${ERP_MINIO_IMAGE:?Set the versioned MinIO image digest}
+    command: ["server", "/data"]
+    restart: unless-stopped
+    env_file: ${ERP_TEST_STORAGE_ENV_FILE:?Set the test storage environment file}
+    mem_limit: 512m
+    mem_reservation: 256m
+    volumes:
+      - minio-data:/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/minio/health/ready"]
+      interval: 10s
+      timeout: 4s
+      retries: 10
+    logging:
+      driver: local
+  clamav:
+    image: ${ERP_CLAMAV_IMAGE:?Set the ClamAV image digest}
+    restart: unless-stopped
+    mem_limit: 1536m
+    mem_reservation: 1024m
+    networks: [scanner]
+    volumes:
+      - clamav-signatures:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping=1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    logging:
+      driver: local
+  api:
+    env_file: ${ERP_TEST_STORAGE_ENV_FILE:?Set the test storage environment file}
+    networks: [edge, data, scanner]
+    environment:
+      ERP_STORAGE_PROVIDER: minio
+      ERP_STORAGE_REGION: us-east-1
+      ERP_STORAGE_ENDPOINT: http://minio:9000
+      ERP_CLAMD_HOST: clamav
+networks:
+  scanner:
+volumes:
+  minio-data:
+  clamav-signatures:

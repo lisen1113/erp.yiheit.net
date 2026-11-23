@@ -1,0 +1,36 @@
+name: Publish T011 MinIO acceptance image
+on:
+  push:
+    branches: [codex/t011-test-deployment]
+    paths: [.github/workflows/publish-t011-minio.yml]
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb
+          persist-credentials: false
+      - name: Build the audited MinIO acceptance image
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb ]]
+          sed 's|^FROM golang:|FROM public.ecr.aws/docker/library/golang:|; s|^FROM alpine:|FROM public.ecr.aws/docker/library/alpine:|' infra/minio/Dockerfile > infra/minio/Dockerfile.ecr
+          docker build --platform linux/amd64 -f infra/minio/Dockerfile.ecr \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            -t ghcr.io/lisen1113/erp.yiheit.net/t011-minio:RELEASE.2025-10-15T17-29-55Z infra/minio
+      - name: Publish privately and report digest
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          export DOCKER_CONFIG
+          DOCKER_CONFIG=$(mktemp -d)
+          trap 'rm -rf -- "$DOCKER_CONFIG"' EXIT
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          unset GHCR_TOKEN
+          docker push ghcr.io/lisen1113/erp.yiheit.net/t011-minio:RELEASE.2025-10-15T17-29-55Z
