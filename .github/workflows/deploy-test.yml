@@ -1,0 +1,84 @@
+name: Deploy ERP test
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full 40-character SHA at the tip of the selected target branch
+        required: true
+        type: string
+      bootstrap_https:
+        description: Select first-time HTTPS bootstrap for the later deployment
+        default: false
+        type: boolean
+      target_ref:
+        description: Target branch to validate
+        required: true
+        type: choice
+        options:
+          - main
+          - codex/t011-test-deployment
+
+permissions: {}
+
+concurrency:
+  group: yihe-erp-test-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      commit_sha: ${{ steps.verify.outputs.commit_sha }}
+      target_ref: ${{ steps.verify.outputs.target_ref }}
+    steps:
+      - name: Verify the approved target, exact SHA and CI
+        id: verify
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_REF: ${{ inputs.target_ref }}
+          EXPECTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          case "$TARGET_REF" in
+            main|codex/t011-test-deployment) ;;
+            *) echo 'Target branch is not allowed' >&2; exit 1 ;;
+          esac
+          if [[ ! "$EXPECTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'Provide a full lowercase 40-character commit SHA' >&2
+            exit 1
+          fi
+          target_head=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$TARGET_REF" --jq '.object.sha')
+          if [[ "$target_head" != "$EXPECTED_SHA" ]]; then
+            echo 'SHA does not match the current target branch tip' >&2
+            exit 1
+          fi
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
+            --branch "$TARGET_REF" --event push --commit "$EXPECTED_SHA" \
+            --json headSha,conclusion \
+            --jq "any(.[]; .headSha == \"$EXPECTED_SHA\" and .conclusion == \"success\")" \
+            | grep -qx true
+          printf 'commit_sha=%s\ntarget_ref=%s\n' "$EXPECTED_SHA" "$TARGET_REF" >> "$GITHUB_OUTPUT"
+
+  register:
+    if: github.ref == 'refs/heads/main' && needs.validate.result == 'success'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Record the validated deployment intent
+        shell: bash
+        env:
+          TARGET_REF: ${{ needs.validate.outputs.target_ref }}
+          EXPECTED_SHA: ${{ needs.validate.outputs.commit_sha }}
+          BOOTSTRAP_HTTPS: ${{ inputs.bootstrap_https }}
+        run: |
+          set -euo pipefail
+          printf 'Validated target: %s\nValidated SHA: %s\nRequested HTTPS bootstrap: %s\n' \
+            "$TARGET_REF" "$EXPECTED_SHA" "$BOOTSTRAP_HTTPS"
+          echo 'Registration only. This run does not connect to a server or dispatch a deployment.'
