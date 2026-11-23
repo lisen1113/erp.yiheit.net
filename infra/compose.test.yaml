@@ -1,0 +1,80 @@
+name: yihe-erp-test
+
+x-runtime: &runtime
+  restart: unless-stopped
+  logging:
+    driver: local
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  postgres:
+    <<: *runtime
+    image: ${ERP_POSTGRES_IMAGE:?Set the PostgreSQL 16 digest}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set the test database name}
+      POSTGRES_USER: ${POSTGRES_USER:?Set the test database user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set the test database password}
+    mem_limit: 1152m
+    mem_reservation: 512m
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  redis:
+    <<: *runtime
+    image: ${ERP_REDIS_IMAGE:?Set the Redis 7 digest}
+    command: ["redis-server", "--maxmemory", "80mb", "--maxmemory-policy", "noeviction"]
+    mem_limit: 128m
+    mem_reservation: 64m
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  api:
+    <<: *runtime
+    image: ${ERP_API_IMAGE:?Set the release API digest}
+    env_file: ${ERP_TEST_ENV_FILE:?Set the test environment file}
+    environment:
+      POSTGRES_HOST: postgres
+      ERP_AUTH_ORIGIN: https://erp.yiheit.net
+      ERP_REDIS_HOST: redis
+    mem_limit: 512m
+    mem_reservation: 256m
+    ports: ["127.0.0.1:18000:8000"]
+    networks: [edge, data]
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/health', timeout=3).close()"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  web:
+    <<: *runtime
+    image: ${ERP_WEB_IMAGE:?Set the release Web digest}
+    environment:
+      ERP_ENV: ${ERP_ENV:?Set ERP_ENV to test}
+    mem_limit: 512m
+    mem_reservation: 256m
+    ports: ["127.0.0.1:13000:3000"]
+    networks: [edge]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/', {signal: AbortSignal.timeout(3000)}).then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+networks:
+  edge:
+  data:
+    internal: true
+volumes:
+  postgres-data:

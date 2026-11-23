@@ -1,0 +1,48 @@
+name: Deploy ERP test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: yihe-erp-test-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Verify CI passed for this main commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml \
+            --branch main --event push --commit "$GITHUB_SHA" \
+            --json conclusion --jq 'any(.[]; .conclusion == "success")' | grep -qx true
+      - name: Deploy the staged test revision
+        env:
+          TEST_HOST: ${{ secrets.TEST_SSH_HOST }}
+          TEST_PORT: ${{ secrets.TEST_SSH_PORT }}
+          TEST_USER: ${{ secrets.TEST_SSH_USER }}
+          TEST_KEY: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
+          TEST_KNOWN_HOSTS: ${{ secrets.TEST_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${TEST_HOST:?Missing TEST_SSH_HOST}" "${TEST_PORT:?Missing TEST_SSH_PORT}"
+          : "${TEST_USER:?Missing TEST_SSH_USER}" "${TEST_KEY:?Missing TEST_SSH_PRIVATE_KEY}"
+          : "${TEST_KNOWN_HOSTS:?Missing TEST_SSH_KNOWN_HOSTS}"
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          umask 077
+          ssh_dir=$(mktemp -d)
+          trap 'rm -f -- "$ssh_dir/key" "$ssh_dir/known_hosts"; rmdir -- "$ssh_dir"' EXIT
+          printf '%s\n' "$TEST_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$TEST_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          ssh -p "$TEST_PORT" -i "$ssh_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" -- "$TEST_USER@$TEST_HOST" \
+            "test \"\$(git -C /srv/yihe-erp/app rev-parse HEAD)\" = '$GITHUB_SHA' && bash /srv/yihe-erp/app/scripts/deploy-test.sh"
