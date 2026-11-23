@@ -186,7 +186,7 @@ headers=${headers//$'\r'/}
 grep -Eq '^HTTP/[^ ]+ 503([[:space:]]|$)' <<<"$headers" || fail 'ERP HTTP status is not 503'
 grep -Eiq '^X-ERP-Stage:[[:space:]]*acme-bootstrap[[:space:]]*$' <<<"$headers" ||
   fail 'ERP bootstrap response header is missing'
-probe_result=$(request -f -w $'\n%{http_code}' "$probe_url") || fail 'ACME probe request failed'
+probe_result=$(request -f -w '%{http_code}' "$probe_url") || fail 'ACME probe request failed'
 [[ "$probe_result" == "$probe"$'\n200' ]] || fail 'ACME probe content or status mismatched'
 
 printf '\nA-1 passed. Nginx tested and reloaded. Website baseline unchanged.\n'
