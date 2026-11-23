@@ -67,3 +67,7 @@ GitHub Environment test 配置 TEST_SSH_HOST、TEST_SSH_PORT、TEST_SSH_USER、T
 Seed 使用 yihe_erp_seed_ 前缀的独立测试数据库。现场由受控临时方式向 Compose 的一次性 API 容器传入 ERP_SEED_DEFAULT_PASSWORD，运行 python -m yihe_api.cli seed-dev。不要在长驻 API 环境文件中保存 Seed 密码。用户认证和 MFA 验收完成后通过受控入口管理测试账号。
 
 备份脚本生成 UTC 命名的 gzip 归档与 SHA-256；恢复脚本在独立恢复库还原并核对十张表行数。实际恢复仍需核对关键固定 Seed UUID，并用连接到恢复库的隔离 API 确认数据。定时策略应每天运行备份，并保留最近七个日归档和四个周归档。
+
+## 首次现场镜像交付
+
+GitHub Actions Artifact 存储配额问题为 DEFERRED / CI delivery optimization。首次部署使用固定提交 62612dfa85382fbd8f10b0ea19b1cd4137b8b6eb 的既有源码归档，不依赖镜像仓库。通过 OrcaTerm 手动运行 scripts/t011-build-on-host.sh，以 API、Worker、Web 顺序串行构建，使用完整 SHA 标签。构建阶段检查官网状态和容器身份，并在资源超限时取消当前 ERP 构建。现场已有 ERP HTTP bootstrap 和证书，后续继续复用。
