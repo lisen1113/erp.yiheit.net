@@ -59,7 +59,7 @@ jobs:
               (($config.Env // []) | all(test("(^|_)(PASSWORD|TOKEN|SECRET|PRIVATE_KEY|JWT_KEY|MFA_KEY|IDENTIFIER_KEY)="; "i") | not))
             ' >/dev/null
             docker run --rm --network none --entrypoint sh "$tag" -ec '
-              forbidden=$(find /app -type f \( -name .env -o -name test.env -o -name "*.key" -o -name "*.pem" -o -name "*.pfx" -o -name "*.p12" -o -name id_ed25519 -o -name id_rsa \) ! -path "*/site-packages/certifi/cacert.pem" -print -quit)
+              forbidden=$(find /app -type f \( -name .env -o -name test.env -o -name "*.key" -o -name "*.pem" -o -name "*.pfx" -o -name "*.p12" -o -name id_ed25519 -o -name id_rsa \) ! -path "*/site-packages/certifi/cacert.pem" ! -path "*/site-packages/botocore/cacert.pem" -print -quit)
               if [ -n "$forbidden" ]; then
                 printf "Unexpected runtime credential path: %s\n" "$forbidden" >&2
                 exit 1
