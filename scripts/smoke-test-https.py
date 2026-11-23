@@ -89,13 +89,13 @@ if os.environ.get("T011_RESUME_HTTPS") == "true":
     login, _ = call(admin, "auth/login", 200, body={"username": "demo-e001", "password": PASSWORD})
     if login["status"] != "mfa_required":
         raise SystemExit("Previously enrolled test administrator must still require MFA")
-    print("Administrator MFA retained. Security-event HTTP 200 carried forward from the prior site run.")
+    print("Administrator MFA retained. Prior security-event HTTP 200 carried forward.")
 
 # system.audit.view requires MFA before audit log access.
 auditor = client()
 login, _ = call(auditor, "auth/login", 200, body={"username": "demo-e009", "password": PASSWORD})
 if "access_token" not in login:
-    raise SystemExit("Auditor already enrolled. Use the existing authenticator for follow-up validation.")
+    raise SystemExit("Auditor already enrolled. Use the existing authenticator.")
 token = login["access_token"]
 call(auditor, "audit-logs", 403, method="GET", token=token)
 setup, _ = call(auditor, "auth/mfa/setup", 200, body={"password": PASSWORD}, token=token)
