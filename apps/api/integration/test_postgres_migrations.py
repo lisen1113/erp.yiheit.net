@@ -75,7 +75,36 @@ def migrated_engine():
                 """),
                 {"company": company, "actor": actor},
             )
+        with engine.begin() as connection:
+            connection.execute(
+                text("UPDATE business_partner SET invoice_bank_account = repeat('X', 255)")
+            )
+        with pytest.raises(subprocess.CalledProcessError):
+            alembic("downgrade", "-1")
+        with engine.begin() as connection:
+            assert (
+                connection.scalar(
+                    text("SELECT char_length(invoice_bank_account) FROM business_partner")
+                )
+                == 255
+            )
+            connection.execute(
+                text("UPDATE business_partner SET invoice_bank_account = 'SYNTHETIC1234'")
+            )
         alembic("downgrade", "-1")
+        assert sorted(inspect(engine).get_table_names()) == CUSTOMER_TABLES
+        bank_column = next(
+            c
+            for c in inspect(engine).get_columns("business_partner")
+            if c["name"] == "invoice_bank_account"
+        )
+        assert str(bank_column["type"]) == "VARCHAR(128)"
+        alembic("upgrade", "head")
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT invoice_bank_account FROM business_partner")) == (
+                "SYNTHETIC1234"
+            )
+        alembic("downgrade", "-2")
         assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
         with engine.connect() as connection:
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
@@ -116,7 +145,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0009_customer_profile"
+            "0010_partner_bank_account_width"
         )
 
 

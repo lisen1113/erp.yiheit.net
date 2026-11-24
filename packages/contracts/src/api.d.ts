@@ -656,6 +656,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/import-template/{file_format}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Template */
+        get: operations["getCustomerImportTemplate"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Customers */
+        post: operations["importCustomers"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers": {
         parameters: {
             query?: never;
@@ -1144,7 +1178,7 @@ export interface components {
          * ErrorCode
          * @enum {string}
          */
-        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "BUSINESS_PARTNER_TAX_NO_CONFLICT" | "CUSTOMER_NO_CONFLICT" | "CUSTOMER_UNAVAILABLE" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
+        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "BUSINESS_PARTNER_TAX_NO_CONFLICT" | "CUSTOMER_IMPORT_PARTNER_MISMATCH" | "CUSTOMER_NO_CONFLICT" | "CUSTOMER_UNAVAILABLE" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
         /** ErrorResponse */
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
@@ -1195,6 +1229,36 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** ImportFile */
+        ImportFile: {
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "csv" | "xlsx";
+            /** Content B64 */
+            content_b64: string;
+        };
+        /** ImportIssue */
+        ImportIssue: {
+            /** Row */
+            row: number;
+            /** Field */
+            field: string;
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
+        /** ImportResult */
+        ImportResult: {
+            /** Succeeded */
+            succeeded: number;
+            /** Failed */
+            failed: number;
+            /** Errors */
+            errors: components["schemas"]["ImportIssue"][];
         };
         /**
          * Kind
@@ -7037,6 +7101,250 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PartnerReceipt"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCustomerImportTemplate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                file_format: "csv" | "xlsx";
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    importCustomers: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportFile"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
                 };
             };
             /** @description 请求格式有误。 */

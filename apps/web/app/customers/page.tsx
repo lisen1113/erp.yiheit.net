@@ -13,6 +13,9 @@ import { permissionState } from "../../lib/authorization";
 
 type Schema = components["schemas"];
 type Customer = Schema["CustomerView"];
+type ImportFormat = Schema["ImportFile"]["format"];
+type ImportResult = Schema["ImportResult"];
+const maxImportSize = 256 * 1024;
 type Credentials = { username: string; password: string; otp: string };
 type Filters = { customer_no?: string; name?: string; tax_no?: string; salesperson_id?: string; active: boolean };
 type CustomerForm = {
@@ -47,6 +50,12 @@ export default function Customers() {
   const [detail, setDetail] = useState<Customer>();
   const [disableTarget, setDisableTarget] = useState<Customer>();
   const [error, setError] = useState<string>();
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File>();
+  const [importResult, setImportResult] = useState<ImportResult>();
+  const pendingImport = useRef<{
+    file: File; operation: ReturnType<typeof createIdempotentOperation<ImportResult>>;
+  }>(null);
   const [busy, setBusy] = useState(false);
   const [form] = Form.useForm<CustomerForm>();
   const [disableForm] = Form.useForm<{ reason: Schema["CustomerDisable"]["reason"] }>();
@@ -148,6 +157,50 @@ export default function Customers() {
     } catch (err) { report(err); }
   }
 
+  async function downloadTemplate(format: ImportFormat) {
+    setError(undefined);
+    try {
+      const response = await fetch(`${endpoint}/import-template/${format}`, {
+        headers: auth.authorization(), cache: "no-store",
+      });
+      if (!response.ok) throw new Error("无法下载客户模板。");
+      const href = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = href;
+      link.download = `customers.${format}`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(href), 1000);
+    } catch (err) { report(err); }
+  }
+
+  async function importCustomers() {
+    if (!importFile) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      if (importFile.size > maxImportSize) throw new Error("文件不得超过 256 KiB。");
+      const ext = importFile.name.toLowerCase().split(".").pop();
+      if (ext !== "xlsx" && ext !== "csv") throw new Error("请选择 Excel (.xlsx) 或 CSV 文件。");
+      if (pendingImport.current?.file !== importFile) {
+        const bytes = new Uint8Array(await importFile.arrayBuffer());
+        let content = "";
+        for (let offset = 0; offset < bytes.length; offset += 16384) {
+          content += String.fromCharCode(...bytes.subarray(offset, offset + 16384));
+        }
+        pendingImport.current = {
+          file: importFile,
+          operation: createIdempotentOperation<ImportResult>(`${endpoint}/import`, {
+            method: "POST", body: JSON.stringify({ format: ext, content_b64: btoa(content) }),
+            headers: { ...auth.authorization(), "Content-Type": "application/json" },
+          }),
+        };
+      }
+      const result = await pendingImport.current.operation.send();
+      setImportResult(result.data);
+      await load();
+    } catch (err) { report(err); } finally { setBusy(false); }
+  }
+
   const options = salespeople.map(person => ({ label: person.name, value: person.id }));
   const sharedFields = editing ? can("business_partner.edit") : source === "new";
 
@@ -172,9 +225,14 @@ export default function Customers() {
           <Form.Item name="active" label="状态"><Select options={[{ value: true, label: "启用" }, { value: false, label: "停用" }]} /></Form.Item>
           <Space><Button htmlType="submit">搜索</Button>
             {can("customer.create") && (can("business_partner.create") || can("business_partner.edit")) && <Button type="primary" onClick={() => openEditor(null)}>新建客户</Button>}
+            {can("customer.create") && (can("business_partner.create") || can("business_partner.edit")) &&
+              <Button onClick={() => {
+                setError(undefined); setImportOpen(true);
+              }}>导入客户</Button>}
             <Button onClick={() => void auth.logout().catch(report).finally(() => {
               setPermissions(undefined); setRows(undefined); setDetail(undefined); setEditing(undefined);
               setDisableTarget(undefined); pending.current = null; form.resetFields();
+              setImportOpen(false); setImportFile(undefined); setImportResult(undefined); pendingImport.current = null;
             })}>退出</Button>
           </Space>
         </Form>
@@ -245,6 +303,32 @@ export default function Customers() {
           { value: "inactive", label: "停止往来" }, { value: "other", label: "其他" },
         ]} /></Form.Item>
       </Form>
+    </Modal>
+    <Modal title="导入客户" open={importOpen} onCancel={() => setImportOpen(false)}
+      onOk={() => void importCustomers()} okText="开始导入" cancelText="关闭"
+      confirmLoading={busy} okButtonProps={{ disabled: !importFile }}>
+      <Space direction="vertical" style={{ width: "100%" }}>
+        <Typography.Paragraph>按模板填写客户和销售人员信息。每份文件最多 100 行、256 KiB。</Typography.Paragraph>
+        <Space>
+          <Button onClick={() => void downloadTemplate("xlsx")}>下载 Excel 模板</Button>
+          <Button onClick={() => void downloadTemplate("csv")}>下载 CSV 模板</Button>
+        </Space>
+        <Input type="file" accept=".xlsx,.csv" aria-label="客户导入文件" disabled={busy}
+          onChange={event => {
+            setImportResult(undefined); setImportFile(event.target.files?.[0]); pendingImport.current = null;
+          }} />
+        {error && <Alert type="error" message={error} />}
+        {importResult && <>
+          <Alert type={importResult.failed ? "warning" : "success"}
+            message={`成功 ${importResult.succeeded} 行，失败 ${importResult.failed} 行`} />
+          {importResult.errors.length > 0 && <Table dataSource={importResult.errors}
+            rowKey={item => `${item.row}:${item.field}:${item.code}`} size="small"
+            columns={[
+              { title: "行", dataIndex: "row" }, { title: "字段", dataIndex: "field" },
+              { title: "原因", dataIndex: "message" },
+            ]} />}
+        </>}
+      </Space>
     </Modal>
     <Modal title={detail?.partner.name} open={!!detail} footer={null} onCancel={() => setDetail(undefined)}>
       {detail && <Descriptions column={1} items={[

@@ -57,7 +57,7 @@ class PartnerFields(BaseModel):
     tax_no: TaxNo = None
     invoice_address_phone: str | None = Field(default=None, max_length=500)
     invoice_bank_name: str | None = Field(default=None, max_length=200)
-    invoice_bank_account: str | None = Field(default=None, max_length=128)
+    invoice_bank_account: str | None = Field(default=None, max_length=255)
     notes: str | None = Field(default=None, max_length=2000)
 
 

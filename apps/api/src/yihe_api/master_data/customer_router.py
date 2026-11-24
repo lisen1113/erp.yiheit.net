@@ -1,6 +1,6 @@
 """Customer profile access with the existing partner, audit and idempotency services."""
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Query, Request, Response
@@ -230,19 +230,37 @@ def create_customer(
     principal: Current,
     idempotency_key: partner_api.Idempotency,
 ) -> Response:
+    return create_customer_record(payload, request, db, principal)
+
+
+def create_customer_record(
+    payload: CustomerCreate,
+    request: Request,
+    db: Session,
+    principal: Principal,
+    *,
+    match_existing: bool = False,
+) -> Response:
     scope = principal.require("customer.create")
     if scope == Scope.SELF and payload.salesperson_id != principal.user.employee_id:
         raise ApiError(ErrorCode.FORBIDDEN)
     partner_data = partner_api.normalize(payload.partner.model_dump()) if payload.partner else {}
-    if payload.partner:
-        principal.require("business_partner.create")
-    else:
-        editable = partner_scope(principal)
+    if not match_existing:
+        if payload.partner:
+            principal.require("business_partner.create")
+        else:
+            partner_scope(principal)
 
     def work(tx: Session, actor: Actor) -> Success:
         partner: BusinessPartner | None
         validate_salesperson(tx, principal, "create", payload.salesperson_id)
-        if payload.partner:
+        partner_id = payload.business_partner_id
+        if match_existing and payload.partner:
+            partner_id = match_partner(
+                tx, actor.company_id, payload.partner.code, payload.partner.tax_no
+            )
+        if partner_id is None:
+            principal.require("business_partner.create")
             partner = B(
                 company_id=actor.company_id,
                 created_by=actor.user_id,
@@ -259,7 +277,7 @@ def create_customer(
         else:
             partner = tx.scalar(
                 select(B)
-                .where(B.id == payload.business_partner_id, B.is_deleted.is_(False), *editable)
+                .where(B.id == partner_id, B.is_deleted.is_(False), *partner_scope(principal))
                 .with_for_update()
             )
             if partner is None:
@@ -290,9 +308,24 @@ def create_customer(
         )
 
     projection = payload.model_dump(exclude={"partner"}, mode="json") | partner_data
-    return partner_api.dispatch(
-        db, request, Operation("customer.create", "customer_profile", None, PATH), projection, work
+    action, path = (
+        ("customer.import_row", f"{PATH}/import") if match_existing else ("customer.create", PATH)
     )
+    return partner_api.dispatch(
+        db, request, Operation(action, "customer_profile", None, path), projection, work
+    )
+
+
+def match_partner(db: Session, company_id: UUID, code: str, tax_no: str | None) -> UUID | None:
+    identity = (B.code == code) | (B.tax_no == tax_no) if tax_no else B.code == code
+    rows = db.execute(
+        select(B.id, B.code, B.tax_no).where(B.company_id == company_id, identity)
+    ).all()
+    if not rows:
+        return None
+    if len(rows) != 1 or (tax_no and rows[0].tax_no != tax_no):
+        raise FinalFailure(ErrorCode.CUSTOMER_IMPORT_PARTNER_MISMATCH)
+    return cast(UUID, rows[0].id)
 
 
 def edit_partner(
