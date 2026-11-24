@@ -13,6 +13,8 @@ from yihe_api.auth.models import Employee, User
 from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
 from yihe_api.db.models import Company
 from yihe_api.db.session import DatabaseSettings
+from yihe_api.master_data.models import BusinessPartner
+from yihe_api.master_data.seed_fixtures import PARTNERS
 from yihe_api.rbac.bootstrap import seed_roles
 from yihe_api.rbac.models import Role, RolePermission, UserRole
 
@@ -175,8 +177,28 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
             None,
         ):
             raise ValueError("Seed role assignment was modified; use a clean database")
+    for code, (name, kind, active, email) in PARTNERS.items():
+        partner_id = seed_id("business_partner", code)
+        row = db.get(BusinessPartner, partner_id)
+        if row is None:
+            db.add(
+                BusinessPartner(
+                    id=partner_id,
+                    company_id=company.id,
+                    code=code,
+                    name=name,
+                    partner_type=kind,
+                    is_active=active,
+                    email=email,
+                    created_by=ACTOR_ID,
+                    updated_by=ACTOR_ID,
+                )
+            )
+        elif (row.company_id, row.code, row.created_by) != (company.id, code, ACTOR_ID):
+            raise ValueError("Fixed partner ID is not owned by seed")
     db.flush()
     return {
+        "business_partner": len(PARTNERS),
         "company": 1,
         "employee": len(PEOPLE),
         "app_user": len(PEOPLE),
@@ -210,6 +232,17 @@ def seed_reset(db: Session) -> bool:
     db.execute(
         delete(Employee).where(Employee.id.in_(employee_ids), Employee.company_id == company.id)
     )
+    records = db.scalars(select(BusinessPartner).where(BusinessPartner.company_id == company.id))
+    for record in records:
+        if (
+            record.code not in PARTNERS
+            or record.id != seed_id("business_partner", record.code)
+            or record.created_by != ACTOR_ID
+            or record.version_no != 1
+        ):
+            raise ValueError("Reset cannot remove non-seed or modified business partners")
+        db.delete(record)
+    db.flush()
     db.delete(company)
     db.flush()
     return True

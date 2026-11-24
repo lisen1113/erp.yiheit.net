@@ -22,6 +22,9 @@ export function createAuthSession() {
   }
 
   return {
+    authorization() {
+      return accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined;
+    },
     async login(payload: Schema["Login"]): Promise<LoginResult> {
       accessToken = undefined;
       const result = await post<LoginResult>("login", payload);

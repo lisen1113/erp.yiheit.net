@@ -15,15 +15,16 @@ from yihe_api.auth.models import Employee, User
 from yihe_api.auth.router import session_factory
 from yihe_api.db.models import Company
 from yihe_api.dev_seed import COMPANY_ID, EPOCH, PEOPLE, seed_id
+from yihe_api.master_data.models import BusinessPartner
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
-from yihe_api.rbac.policy import PERMISSIONS, SOD_ACTIONS, SYSTEM_ROLES
+from yihe_api.rbac.policy import PARTNER_GRANTS, PERMISSIONS, SOD_ACTIONS, SYSTEM_ROLES
 
 
 def snapshot():
     with session_factory()() as db:
         records = {
             model.__tablename__: tuple(db.scalars(select(model.id).order_by(model.id)))
-            for model in (Company, Employee, User, Role, Permission, UserRole)
+            for model in (Company, Employee, User, Role, Permission, UserRole, BusinessPartner)
         }
         records["role_permission"] = tuple(
             db.execute(
@@ -62,6 +63,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
     counts = {table: len(rows) for table, rows in first.items()}
     assert counts | {"permission": 0, "role_permission": 0} == {
         "company": 1,
+        "business_partner": 14,
         "employee": 9,
         "app_user": 9,
         "role": 8,
@@ -70,8 +72,16 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
         "role_permission": 0,
     }
     assert counts["permission"] == len(PERMISSIONS)
-    assert counts["role_permission"] == sum(len(role[3]) for role in SYSTEM_ROLES.values())
+    assert counts["role_permission"] == sum(
+        len(role[3] | PARTNER_GRANTS.get(code, set())) for code, role in SYSTEM_ROLES.items()
+    )
     with session_factory()() as db:
+        partners = list(db.scalars(select(BusinessPartner)))
+        assert sum(p.partner_type in {"CUSTOMER", "BOTH"} for p in partners) == 10
+        assert sum(p.partner_type in {"SUPPLIER", "BOTH"} for p in partners) == 5
+        assert [p.id for p in partners if p.partner_type == "BOTH"] == [
+            seed_id("business_partner", "PARTY-DUAL")
+        ]
         people = list(
             db.execute(
                 select(User, Employee, Role, UserRole)

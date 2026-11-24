@@ -27,6 +27,8 @@ AUTH_TABLES = [
 RBAC_TABLES = sorted([*AUTH_TABLES, "permission", "role", "role_permission", "user_role"])
 AUDIT_TABLES = sorted([*RBAC_TABLES, "audit_log", "security_event"])
 IDEM_TABLES = sorted([*AUDIT_TABLES, "idempotency_record"])
+FILE_TABLES = sorted([*IDEM_TABLES, "brand_asset", "file_asset"])
+PARTNER_TABLES = sorted([*FILE_TABLES, "business_partner"])
 CONFIG = Path(__file__).resolve().parents[1] / "alembic.ini"
 
 
@@ -52,20 +54,53 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*IDEM_TABLES, "brand_asset", "file_asset"]
-        )
+        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        actor = uuid4()
+        with engine.begin() as connection:
+            company = connection.scalar(
+                text("""
+                    INSERT INTO company (code, name, created_by, updated_by)
+                    VALUES ('TAX-ROUNDTRIP', 'Synthetic migration company', :actor, :actor)
+                    RETURNING id
+                """),
+                {"actor": actor},
+            )
+            connection.execute(
+                text("""
+                    INSERT INTO business_partner
+                        (company_id, code, name, partner_type, tax_no, created_by, updated_by)
+                    VALUES (:company, 'TAX-01', 'Synthetic partner', 'BOTH',
+                            'ABC-123', :actor, :actor)
+                """),
+                {"company": company, "actor": actor},
+            )
         alembic("downgrade", "-1")
-        assert sorted(inspect(engine).get_table_names()) == IDEM_TABLES
-        with engine.connect() as connection:
+        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        assert "invoice_tax_no" in {
+            c["name"] for c in inspect(engine).get_columns("business_partner")
+        }
+        with engine.begin() as connection:
             assert (
                 connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == "0005_idempotency"
+                == "0007_business_partner"
+            )
+            assert connection.scalar(text("SELECT invoice_tax_no FROM business_partner")) == (
+                "ABC-123"
+            )
+            connection.execute(
+                text("UPDATE business_partner SET invoice_tax_no = :raw"),
+                {"raw": "　ａｂ ｃ－１２３　"},
             )
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == sorted(
-            [*IDEM_TABLES, "brand_asset", "file_asset"]
-        )
+        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        with pytest.raises(IntegrityError), engine.begin() as connection:
+            connection.execute(text("UPDATE business_partner SET tax_no = ' abc-123 '"))
+        with engine.begin() as connection:
+            assert connection.scalar(text("SELECT tax_no FROM business_partner")) == "ABC-123"
+            connection.execute(
+                text("DELETE FROM business_partner WHERE company_id = :id"), {"id": company}
+            )
+            connection.execute(text("DELETE FROM company WHERE id = :id"), {"id": company})
         alembic("check")
         yield engine
     finally:
@@ -75,7 +110,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0006_file_brand_assets"
+            "0008_partner_tax_no"
         )
 
 
