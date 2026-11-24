@@ -6,6 +6,8 @@ from collections.abc import Iterator
 from decimal import Decimal
 from pathlib import Path
 
+from yihe_api.master_data.seed_fixtures import PARTNERS
+
 ROOT = Path(__file__).resolve().parent
 DATE = "2026-01-15"
 DECIMAL = re.compile(r"-?(?:0|[1-9][0-9]*)\.[0-9]{2,6}")
@@ -88,6 +90,17 @@ def validate(root: Path = ROOT) -> dict[str, int]:
         if len(ids) != expected:
             raise ValueError(f"{group}: duplicate fixture ID")
         catalog[group] = ids
+    partners = {}
+    for group, role in (("customers", "CUSTOMER"), ("suppliers", "SUPPLIER")):
+        for row in master[group]:
+            key = row["party_id"]
+            if key in partners:
+                name, _, active, email = partners[key]
+                partners[key] = (name, "BOTH", active, email)
+            else:
+                partners[key] = (row["name"], role, row.get("active", True), row["contact_email"])
+    if partners != PARTNERS:
+        raise ValueError("Packaged business-partner projection must match T010 fixtures")
     paths = sorted((root / "scenarios").glob("*.json"))
     if [path.stem for path in paths] != [f"S{number:03}" for number in range(1, 11)]:
         raise ValueError("Expected numbered S001–S010 scenarios")

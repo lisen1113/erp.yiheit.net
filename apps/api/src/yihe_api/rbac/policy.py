@@ -47,7 +47,24 @@ SOD_ACTIONS = frozenset(
         "customer.credit_limit.approve",
     }
 )
+PARTNER_VIEW = "business_partner.view"
+PARTNER_FULL = "business_partner.bank_account.view_full"
+PARTNER_GRANTS = {
+    "SYSTEM_ADMIN": {
+        PARTNER_VIEW,
+        "business_partner.create",
+        "business_partner.edit",
+        "business_partner.disable",
+    },
+    "MANAGEMENT": {PARTNER_VIEW},
+    "FINANCE": {PARTNER_VIEW, PARTNER_FULL},
+    "SALES": {"business_partner.view_customer"},
+    "PURCHASE": {"business_partner.view_supplier"},
+    "WAREHOUSE": {"business_partner.view_basic"},
+    "AUDITOR": {PARTNER_VIEW},
+}
 HIGH_PERMISSIONS = SOD_ACTIONS | {
+    PARTNER_FULL,
     USER_MANAGE,
     ROLE_MANAGE,
     COST_VIEW,
@@ -90,6 +107,7 @@ PERMISSIONS = (
         }
     )
     | HIGH_PERMISSIONS
+    | frozenset().union(*PARTNER_GRANTS.values())
 )
 SYSTEM_ADMIN = "SYSTEM_ADMIN"
 SYSTEM_ROLES = {

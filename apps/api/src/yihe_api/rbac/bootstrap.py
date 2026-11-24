@@ -10,7 +10,13 @@ from yihe_api.auth.models import Employee, User
 from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
 from yihe_api.db.models import Company
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
-from yihe_api.rbac.policy import HIGH_PERMISSIONS, PERMISSIONS, SYSTEM_ADMIN, SYSTEM_ROLES
+from yihe_api.rbac.policy import (
+    HIGH_PERMISSIONS,
+    PARTNER_GRANTS,
+    PERMISSIONS,
+    SYSTEM_ADMIN,
+    SYSTEM_ROLES,
+)
 
 
 def seed_roles(db: Session, company_id: UUID, actor_id: UUID) -> dict[str, Role]:
@@ -47,7 +53,7 @@ def seed_roles(db: Session, company_id: UUID, actor_id: UUID) -> dict[str, Role]
         db.flush()
         db.add_all(
             RolePermission(role_id=role.id, permission_id=permissions[p].id, granted_by=actor_id)
-            for p in sorted(grants)
+            for p in sorted(grants | PARTNER_GRANTS.get(code, set()))
         )
         roles[code] = role
     db.flush()
