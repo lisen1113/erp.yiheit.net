@@ -55,15 +55,52 @@ def migrated_engine():
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        actor = uuid4()
+        with engine.begin() as connection:
+            company = connection.scalar(
+                text("""
+                    INSERT INTO company (code, name, created_by, updated_by)
+                    VALUES ('TAX-ROUNDTRIP', 'Synthetic migration company', :actor, :actor)
+                    RETURNING id
+                """),
+                {"actor": actor},
+            )
+            connection.execute(
+                text("""
+                    INSERT INTO business_partner
+                        (company_id, code, name, partner_type, tax_no, created_by, updated_by)
+                    VALUES (:company, 'TAX-01', 'Synthetic partner', 'BOTH',
+                            'ABC-123', :actor, :actor)
+                """),
+                {"company": company, "actor": actor},
+            )
         alembic("downgrade", "-1")
-        assert sorted(inspect(engine).get_table_names()) == FILE_TABLES
-        with engine.connect() as connection:
+        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        assert "invoice_tax_no" in {
+            c["name"] for c in inspect(engine).get_columns("business_partner")
+        }
+        with engine.begin() as connection:
             assert (
                 connection.scalar(text("SELECT version_num FROM alembic_version"))
-                == "0006_file_brand_assets"
+                == "0007_business_partner"
+            )
+            assert connection.scalar(text("SELECT invoice_tax_no FROM business_partner")) == (
+                "ABC-123"
+            )
+            connection.execute(
+                text("UPDATE business_partner SET invoice_tax_no = :raw"),
+                {"raw": "　ａｂ ｃ－１２３　"},
             )
         alembic("upgrade", "head")
         assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        with pytest.raises(IntegrityError), engine.begin() as connection:
+            connection.execute(text("UPDATE business_partner SET tax_no = ' abc-123 '"))
+        with engine.begin() as connection:
+            assert connection.scalar(text("SELECT tax_no FROM business_partner")) == "ABC-123"
+            connection.execute(
+                text("DELETE FROM business_partner WHERE company_id = :id"), {"id": company}
+            )
+            connection.execute(text("DELETE FROM company WHERE id = :id"), {"id": company})
         alembic("check")
         yield engine
     finally:
@@ -73,7 +110,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0007_business_partner"
+            "0008_partner_tax_no"
         )
 
 

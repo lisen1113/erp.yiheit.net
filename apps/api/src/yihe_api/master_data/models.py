@@ -2,7 +2,7 @@
 
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, String, UniqueConstraint, true
+from sqlalchemy import CheckConstraint, Index, String, UniqueConstraint, text, true
 from sqlalchemy.orm import Mapped, mapped_column
 
 from yihe_api.db.models import (
@@ -15,6 +15,24 @@ from yihe_api.db.models import (
     SoftDeleteMixin,
 )
 
+CANONICAL_TAX_NO = r"""
+    NULLIF(
+        translate(
+            replace(
+                btrim(
+                    normalize(tax_no, NFKC),
+                    U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\00A0'
+                    || U&'\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A'
+                    || U&'\2028\2029\202F\205F\3000'
+                ),
+                ' ', ''
+            ),
+            'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        ),
+        ''
+    )
+"""
+
 
 class BusinessPartner(
     IdentityMixin, CompanyScopeMixin, AuditMixin, SoftDeleteMixin, LegacyMixin, Base
@@ -22,8 +40,19 @@ class BusinessPartner(
     __tablename__ = "business_partner"
     __table_args__ = (
         UniqueConstraint("company_id", "code"),
+        Index(
+            "uq_business_partner_company_tax_no",
+            "company_id",
+            "tax_no",
+            unique=True,
+            postgresql_where=text("tax_no IS NOT NULL"),
+        ),
         UniqueConstraint("company_id", "unified_social_credit_code"),
         CheckConstraint("partner_type IN ('CUSTOMER', 'SUPPLIER', 'BOTH')", name="partner_type"),
+        CheckConstraint(
+            f"tax_no IS NOT DISTINCT FROM ({CANONICAL_TAX_NO})",
+            name="tax_no_normalized",
+        ),
         CheckConstraint("currency_code = 'CNY'", name="currency_cny"),
         CheckConstraint("credit_limit >= 0", name="credit_limit_nonnegative"),
         CheckConstraint("payment_terms_days >= 0", name="payment_terms_nonnegative"),
@@ -47,7 +76,7 @@ class BusinessPartner(
     registered_address: Mapped[str | None] = mapped_column(String(500))
     business_address: Mapped[str | None] = mapped_column(String(500))
     invoice_title: Mapped[str | None] = mapped_column(String(200))
-    invoice_tax_no: Mapped[str | None] = mapped_column(String(64))
+    tax_no: Mapped[str | None] = mapped_column(String(64))
     invoice_address_phone: Mapped[str | None] = mapped_column(String(500))
     invoice_bank_name: Mapped[str | None] = mapped_column(String(200))
     invoice_bank_account: Mapped[str | None] = mapped_column(String(128))

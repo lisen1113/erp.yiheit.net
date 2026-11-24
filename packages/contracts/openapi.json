@@ -9710,6 +9710,7 @@
           "NOT_FOUND",
           "METHOD_NOT_ALLOWED",
           "CONFLICT",
+          "BUSINESS_PARTNER_TAX_NO_CONFLICT",
           "VERSION_CONFLICT",
           "IDEMPOTENCY_CONFLICT",
           "IDEMPOTENCY_KEY_REQUIRED",
@@ -10022,6 +10023,18 @@
             ],
             "title": "Invoice Title"
           },
+          "tax_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax No"
+          },
           "invoice_address_phone": {
             "anyOf": [
               {
@@ -10239,6 +10252,18 @@
               }
             ],
             "title": "Invoice Title"
+          },
+          "tax_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax No"
           },
           "invoice_address_phone": {
             "anyOf": [
@@ -10648,7 +10673,7 @@
             ],
             "title": "Invoice Title"
           },
-          "invoice_tax_no": {
+          "tax_no": {
             "anyOf": [
               {
                 "type": "string"
@@ -10657,7 +10682,7 @@
                 "type": "null"
               }
             ],
-            "title": "Invoice Tax No"
+            "title": "Tax No"
           },
           "invoice_address_phone": {
             "anyOf": [

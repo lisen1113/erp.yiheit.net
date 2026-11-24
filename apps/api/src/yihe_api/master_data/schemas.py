@@ -4,6 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated, Literal
+from unicodedata import normalize
 from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
@@ -26,6 +27,16 @@ CreditLimit = Annotated[
     Field(ge=0, max_digits=18, decimal_places=2),
     BeforeValidator(validate_decimal, json_schema_input_type=str),
 ]
+ASCII_UPPER = str.maketrans("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+def normalize_tax_no(value: object) -> object:
+    if not isinstance(value, str):
+        return value
+    return normalize("NFKC", value).strip().replace(" ", "").translate(ASCII_UPPER) or None
+
+
+TaxNo = Annotated[str | None, Field(max_length=64), BeforeValidator(normalize_tax_no)]
 Code = Annotated[str, Field(min_length=1, max_length=32)]
 Name = Annotated[str, Field(min_length=1, max_length=200)]
 PaymentDays = Annotated[int, Field(ge=0, le=2147483647)]
@@ -43,6 +54,7 @@ class PartnerFields(BaseModel):
     registered_address: str | None = Field(default=None, max_length=500)
     business_address: str | None = Field(default=None, max_length=500)
     invoice_title: str | None = Field(default=None, max_length=200)
+    tax_no: TaxNo = None
     invoice_address_phone: str | None = Field(default=None, max_length=500)
     invoice_bank_name: str | None = Field(default=None, max_length=200)
     invoice_bank_account: str | None = Field(default=None, max_length=128)
@@ -95,7 +107,7 @@ class PartnerView(BaseModel):
     registered_address: str | None = None
     business_address: str | None = None
     invoice_title: str | None = None
-    invoice_tax_no: str | None = None
+    tax_no: str | None = None
     invoice_address_phone: str | None = None
     invoice_bank_name: str | None = None
     invoice_bank_account: str | None = None

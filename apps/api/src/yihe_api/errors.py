@@ -21,6 +21,7 @@ class ErrorCode(StrEnum):
     NOT_FOUND = "NOT_FOUND"
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
     CONFLICT = "CONFLICT"
+    BUSINESS_PARTNER_TAX_NO_CONFLICT = "BUSINESS_PARTNER_TAX_NO_CONFLICT"
     VERSION_CONFLICT = "VERSION_CONFLICT"
     IDEMPOTENCY_CONFLICT = "IDEMPOTENCY_CONFLICT"
     IDEMPOTENCY_KEY_REQUIRED = "IDEMPOTENCY_KEY_REQUIRED"
@@ -55,6 +56,10 @@ ERRORS = {
     ErrorCode.NOT_FOUND: (404, "找不到请求的资源。"),
     ErrorCode.METHOD_NOT_ALLOWED: (405, "此资源不支持该请求方法。"),
     ErrorCode.CONFLICT: (409, "操作与当前状态冲突，请刷新后重试。"),
+    ErrorCode.BUSINESS_PARTNER_TAX_NO_CONFLICT: (
+        409,
+        "该发票税号已关联其他往来单位，请检查是否为同一主体。",
+    ),
     ErrorCode.VERSION_CONFLICT: (409, "数据已更新，请刷新后重试。"),
     ErrorCode.IDEMPOTENCY_KEY_REQUIRED: (422, "缺少幂等请求标识。"),
     ErrorCode.IDEMPOTENCY_KEY_INVALID: (422, "幂等请求标识须为随机 UUIDv4。"),
@@ -88,6 +93,7 @@ HTTP_CODES = {
     if not code.name.startswith(("AUTH_", "AUDIT_", "SELF_", "IDEMPOTENCY_", "FILE_"))
     and code
     not in {
+        ErrorCode.BUSINESS_PARTNER_TAX_NO_CONFLICT,
         ErrorCode.VERSION_CONFLICT,
         ErrorCode.IDEMPOTENCY_CONFLICT,
         ErrorCode.HTTP_ERROR,

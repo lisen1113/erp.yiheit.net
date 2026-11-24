@@ -868,7 +868,7 @@ export interface components {
          * ErrorCode
          * @enum {string}
          */
-        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
+        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "BUSINESS_PARTNER_TAX_NO_CONFLICT" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
         /** ErrorResponse */
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
@@ -957,6 +957,8 @@ export interface components {
             business_address?: string | null;
             /** Invoice Title */
             invoice_title?: string | null;
+            /** Tax No */
+            tax_no?: string | null;
             /** Invoice Address Phone */
             invoice_address_phone?: string | null;
             /** Invoice Bank Name */
@@ -1011,6 +1013,8 @@ export interface components {
             business_address?: string | null;
             /** Invoice Title */
             invoice_title?: string | null;
+            /** Tax No */
+            tax_no?: string | null;
             /** Invoice Address Phone */
             invoice_address_phone?: string | null;
             /** Invoice Bank Name */
@@ -1121,8 +1125,8 @@ export interface components {
             business_address?: string | null;
             /** Invoice Title */
             invoice_title?: string | null;
-            /** Invoice Tax No */
-            invoice_tax_no?: string | null;
+            /** Tax No */
+            tax_no?: string | null;
             /** Invoice Address Phone */
             invoice_address_phone?: string | null;
             /** Invoice Bank Name */

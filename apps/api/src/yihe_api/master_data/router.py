@@ -196,6 +196,9 @@ def flush_partner(db: Session) -> None:
     except IntegrityError as error:
         state = getattr(error.orig, "sqlstate", None)
         if state == "23505":
+            constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
+            if constraint == "uq_business_partner_company_tax_no":
+                raise FinalFailure(ErrorCode.BUSINESS_PARTNER_TAX_NO_CONFLICT) from None
             raise FinalFailure(ErrorCode.CONFLICT) from None
         raise
 

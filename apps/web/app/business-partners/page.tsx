@@ -18,7 +18,7 @@ const roleOptions = Object.entries(roles).map(([value, label]) => ({ value, labe
 const textFields = [
   ["short_name", "简称"], ["unified_social_credit_code", "统一社会信用代码"], ["taxpayer_type", "纳税人类型"],
   ["tax_registration_no", "税务登记号"], ["contact_name", "主要联系人"], ["phone", "电话"], ["email", "电子邮件"],
-  ["registered_address", "注册地址"], ["business_address", "经营地址"], ["invoice_title", "发票抬头"],
+  ["registered_address", "注册地址"], ["business_address", "经营地址"], ["invoice_title", "发票抬头"], ["tax_no", "发票税号"],
   ["invoice_address_phone", "开票地址及电话"], ["invoice_bank_name", "结算银行"], ["notes", "备注"],
 ] as const;
 
@@ -189,7 +189,6 @@ export default function BusinessPartners() {
     </Modal>
     <Modal title={detail?.name} open={!!detail} footer={null} onCancel={() => setDetail(undefined)}>
       {detail && <dl>{textFields.map(([key, label]) => detail[key] != null && <div key={key}><dt>{label}</dt><dd>{detail[key]}</dd></div>)}
-        {detail.invoice_tax_no && <><dt>发票税号</dt><dd>{detail.invoice_tax_no}</dd></>}
         {detail.invoice_bank_account && <><dt>结算账号</dt><dd>{detail.invoice_bank_account}</dd></>}
         {detail.credit_limit != null && <><dt>信用额度（CNY）</dt><dd>{detail.credit_limit}</dd></>}
       </dl>}

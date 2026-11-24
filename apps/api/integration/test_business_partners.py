@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from secrets import token_urlsafe
+from threading import Barrier
 from uuid import UUID, uuid4
 
 import pytest
@@ -234,3 +235,139 @@ def test_audit_failure_rolls_back_the_partner(partner_clients, monkeypatch):
     )
     assert response.status_code == 500
     assert client.get(PATH, headers=owner).json()["total"] == 0
+
+
+@pytest.mark.parametrize(
+    "variant",
+    ["sample-88", "  SAMPLE-88  ", "SAM PLE-88", "Ｓａｍｐｌｅ－８８"],
+)
+def test_canonical_tax_no_conflicts(partner_clients, variant):
+    client, users = partner_clients
+    owner = users["owner"]
+    first = write(
+        client,
+        owner,
+        "POST",
+        PATH,
+        {
+            "code": "TAX-1",
+            "name": "Synthetic first",
+            "partner_type": "BOTH",
+            "tax_no": " SAMPLE-88 ",
+        },
+    )
+    assert first.status_code == 201
+    detail = f"{PATH}/{first.json()['resource_id']}"
+    assert client.get(detail, headers=owner).json()["tax_no"] == "SAMPLE-88"
+    payload = {
+        "code": "TAX-2",
+        "name": "Synthetic second",
+        "partner_type": "SUPPLIER",
+        "tax_no": variant,
+    }
+    result = write(client, owner, "POST", PATH, payload)
+    assert result.status_code == 409
+    error = result.json()
+    assert error["code"] == "BUSINESS_PARTNER_TAX_NO_CONFLICT"
+    assert not error["field_errors"] and "TAX-1" not in result.text
+    assert write(client, users["other"], "POST", PATH, payload).status_code == 201
+
+
+def test_optional_tax_no_and_update(partner_clients):
+    client, users = partner_clients
+    owner = users["owner"]
+
+    def create(code, tax_no):
+        response = write(
+            client,
+            owner,
+            "POST",
+            PATH,
+            {
+                "code": code,
+                "name": "Synthetic",
+                "partner_type": "CUSTOMER",
+                "tax_no": tax_no,
+            },
+        )
+        assert response.status_code == 201
+        return f"{PATH}/{response.json()['resource_id']}"
+
+    paths = [create(f"NONTAX-{i}", value) for i, value in enumerate((None, None, "", "　 \t"))]
+    assert all(client.get(path, headers=owner).json()["tax_no"] is None for path in paths)
+    reserved = create("TAX-RESERVED", "abc-2026")
+    blocked = write(
+        client, owner, "PATCH", paths[0], {"version_no": 1, "tax_no": "ＡＢＣ - ２０２６"}
+    )
+    assert blocked.status_code == 409
+    assert blocked.json()["code"] == "BUSINESS_PARTNER_TAX_NO_CONFLICT"
+    assert client.get(paths[0], headers=owner).json()["version_no"] == 1
+    changed = write(
+        client,
+        owner,
+        "PATCH",
+        reserved,
+        {
+            "version_no": 1,
+            "tax_no": " abc-2026 ",
+            "partner_type": "BOTH",
+        },
+    )
+    assert changed.status_code == 200
+    assert client.get(reserved, headers=owner).json()["tax_no"] == "ABC-2026"
+    assert (
+        write(client, owner, "PATCH", reserved, {"version_no": 2, "tax_no": ""}).status_code == 200
+    )
+    assert client.get(reserved, headers=owner).json()["tax_no"] is None
+
+
+def test_concurrent_tax_no_creation_conflict_and_replay(partner_clients):
+    client, users = partner_clients
+    owner = users["owner"]
+    barrier = Barrier(2)
+    payloads = [
+        {"code": "RACE-A", "name": "Synthetic A", "partner_type": "BOTH", "tax_no": "race-1"},
+        {
+            "code": "RACE-B",
+            "name": "Synthetic B",
+            "partner_type": "CUSTOMER",
+            "tax_no": " ＲＡＣＥ -１ ",
+        },
+    ]
+    keys = [str(uuid4()), str(uuid4())]
+
+    def submit(i):
+        barrier.wait(timeout=5)
+        return write(client, owner, "POST", PATH, payloads[i], keys[i])
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(submit, range(2)))
+    assert sorted(r.status_code for r in responses) == [201, 409]
+    winner = next(i for i, r in enumerate(responses) if r.status_code == 201)
+    loser = 1 - winner
+    assert responses[loser].json()["code"] == "BUSINESS_PARTNER_TAX_NO_CONFLICT"
+    resource_id = responses[winner].json()["resource_id"]
+    for i, status in ((winner, 201), (loser, 409)):
+        replay = write(client, owner, "POST", PATH, payloads[i], keys[i])
+        assert replay.status_code == status and replay.headers["Idempotency-Replayed"] == "true"
+        field = "resource_id" if i == winner else "code"
+        assert replay.json()[field] == responses[i].json()[field]
+    same_key = write(
+        client, owner, "POST", PATH, {**payloads[winner], "tax_no": " RACE-1 "}, keys[winner]
+    )
+    assert same_key.status_code == 201 and same_key.json()["resource_id"] == resource_id
+    changed_key = write(
+        client, owner, "POST", PATH, {**payloads[winner], "tax_no": "RACE-2"}, keys[winner]
+    )
+    assert changed_key.json()["code"] == "IDEMPOTENCY_CONFLICT"
+    rows = client.get(PATH, headers=owner).json()["items"]
+    assert [(r["id"], r["tax_no"]) for r in rows] == [(resource_id, "RACE-1")]
+    with session_factory()() as db:
+        company = UUID(rows[0]["company_id"])
+        created = db.scalars(
+            select(AuditLog.entity_id).where(
+                AuditLog.company_id == company,
+                AuditLog.action == "business_partner.created",
+            )
+        ).all()
+        assert created == [UUID(resource_id)]
