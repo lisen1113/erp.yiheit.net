@@ -13,8 +13,9 @@ from yihe_api.auth.models import Employee, User
 from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
 from yihe_api.db.models import Company
 from yihe_api.db.session import DatabaseSettings
+from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
-from yihe_api.master_data.seed_fixtures import PARTNERS
+from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS
 from yihe_api.rbac.bootstrap import seed_roles
 from yihe_api.rbac.models import Role, RolePermission, UserRole
 
@@ -197,7 +198,35 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
         elif (row.company_id, row.code, row.created_by) != (company.id, code, ACTOR_ID):
             raise ValueError("Fixed partner ID is not owned by seed")
     db.flush()
+    for party_code, (customer_no, kind, active) in CUSTOMERS.items():
+        profile_id = seed_id("customer_profile", party_code)
+        partner_id = seed_id("business_partner", party_code)
+        profile = db.get(CustomerProfile, profile_id)
+        if profile is None:
+            db.add(
+                CustomerProfile(
+                    id=profile_id,
+                    company_id=company.id,
+                    business_partner_id=partner_id,
+                    customer_no=customer_no,
+                    customer_type=kind,
+                    salesperson_id=seed_id("employee", "E005"),
+                    is_active=active,
+                    is_synthetic=True,
+                    created_by=ACTOR_ID,
+                    updated_by=ACTOR_ID,
+                )
+            )
+        elif (
+            profile.company_id != company.id
+            or profile.business_partner_id != partner_id
+            or not profile.is_synthetic
+            or profile.created_by != ACTOR_ID
+        ):
+            raise ValueError("Fixed customer profile ID is not owned by seed")
+    db.flush()
     return {
+        "customer_profile": len(CUSTOMERS),
         "business_partner": len(PARTNERS),
         "company": 1,
         "employee": len(PEOPLE),
@@ -225,6 +254,18 @@ def seed_reset(db: Session) -> bool:
     roles = list(db.scalars(select(Role).where(Role.company_id == company.id)))
     if any(not row.is_system or row.created_by != ACTOR_ID for row in roles):
         raise ValueError("Reset cannot remove non-seed roles")
+    profiles = db.scalars(select(CustomerProfile).where(CustomerProfile.company_id == company.id))
+    seed_profile_ids = {seed_id("customer_profile", code) for code in CUSTOMERS}
+    for profile in profiles:
+        if (
+            profile.id not in seed_profile_ids
+            or not profile.is_synthetic
+            or profile.created_by != ACTOR_ID
+            or profile.version_no != 1
+        ):
+            raise ValueError("Reset cannot remove non-seed or modified customer profiles")
+        db.delete(profile)
+    db.flush()
     db.execute(delete(UserRole).where(UserRole.company_id == company.id))
     db.execute(delete(RolePermission).where(RolePermission.role_id.in_([r.id for r in roles])))
     db.execute(delete(Role).where(Role.company_id == company.id))

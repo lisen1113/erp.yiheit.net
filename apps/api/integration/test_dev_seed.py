@@ -15,16 +15,32 @@ from yihe_api.auth.models import Employee, User
 from yihe_api.auth.router import session_factory
 from yihe_api.db.models import Company
 from yihe_api.dev_seed import COMPANY_ID, EPOCH, PEOPLE, seed_id
+from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
-from yihe_api.rbac.policy import PARTNER_GRANTS, PERMISSIONS, SOD_ACTIONS, SYSTEM_ROLES
+from yihe_api.rbac.policy import (
+    CUSTOMER_GRANTS,
+    PARTNER_GRANTS,
+    PERMISSIONS,
+    SOD_ACTIONS,
+    SYSTEM_ROLES,
+)
 
 
 def snapshot():
     with session_factory()() as db:
         records = {
             model.__tablename__: tuple(db.scalars(select(model.id).order_by(model.id)))
-            for model in (Company, Employee, User, Role, Permission, UserRole, BusinessPartner)
+            for model in (
+                Company,
+                Employee,
+                User,
+                Role,
+                Permission,
+                UserRole,
+                BusinessPartner,
+                CustomerProfile,
+            )
         }
         records["role_permission"] = tuple(
             db.execute(
@@ -64,6 +80,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
     assert counts | {"permission": 0, "role_permission": 0} == {
         "company": 1,
         "business_partner": 14,
+        "customer_profile": 10,
         "employee": 9,
         "app_user": 9,
         "role": 8,
@@ -73,9 +90,17 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
     }
     assert counts["permission"] == len(PERMISSIONS)
     assert counts["role_permission"] == sum(
-        len(role[3] | PARTNER_GRANTS.get(code, set())) for code, role in SYSTEM_ROLES.items()
+        len(role[3] | PARTNER_GRANTS.get(code, set()) | CUSTOMER_GRANTS.get(code, set()))
+        for code, role in SYSTEM_ROLES.items()
     )
     with session_factory()() as db:
+        profiles = list(db.scalars(select(CustomerProfile)))
+        assert len(profiles) == 10 and all(row.is_synthetic for row in profiles)
+        assert {p.customer_type for p in profiles} >= {"standard", "credit", "prepaid", "dual"}
+        assert not next(p for p in profiles if p.customer_no == "C09").is_active
+        assert next(p for p in profiles if p.customer_no == "C10").business_partner_id == (
+            seed_id("business_partner", "PARTY-DUAL")
+        )
         partners = list(db.scalars(select(BusinessPartner)))
         assert sum(p.partner_type in {"CUSTOMER", "BOTH"} for p in partners) == 10
         assert sum(p.partner_type in {"SUPPLIER", "BOTH"} for p in partners) == 5

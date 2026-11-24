@@ -45,6 +45,15 @@ export default function BusinessPartners() {
       headers: auth.authorization(), cache: "no-store",
     });
     setPermissions(result.data);
+    const id = new URLSearchParams(window.location.search).get("partner_id");
+    if (id && /^[0-9a-f-]{36}$/i.test(id)) {
+      try {
+        const current = await apiRequest<Partner>(`${endpoint}/${id}`, {
+          headers: auth.authorization(), cache: "no-store",
+        });
+        setDetail(current.data);
+      } catch (err) { setError(err instanceof Error ? err.message : "无法读取往来主体。"); }
+    }
   }, [auth]);
 
   async function login(values: AuthValues) {

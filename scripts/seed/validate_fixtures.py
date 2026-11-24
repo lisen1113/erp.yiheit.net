@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from decimal import Decimal
 from pathlib import Path
 
-from yihe_api.master_data.seed_fixtures import PARTNERS
+from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS
 
 ROOT = Path(__file__).resolve().parent
 DATE = "2026-01-15"
@@ -99,6 +99,12 @@ def validate(root: Path = ROOT) -> dict[str, int]:
                 partners[key] = (name, "BOTH", active, email)
             else:
                 partners[key] = (row["name"], role, row.get("active", True), row["contact_email"])
+    customers = {
+        row["party_id"]: (row["id"], row["kind"].lower(), row["active"])
+        for row in master["customers"]
+    }
+    if customers != CUSTOMERS:
+        raise ValueError("Packaged customer projection must match T010 fixtures")
     if partners != PARTNERS:
         raise ValueError("Packaged business-partner projection must match T010 fixtures")
     paths = sorted((root / "scenarios").glob("*.json"))

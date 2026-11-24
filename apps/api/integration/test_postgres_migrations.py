@@ -29,6 +29,7 @@ AUDIT_TABLES = sorted([*RBAC_TABLES, "audit_log", "security_event"])
 IDEM_TABLES = sorted([*AUDIT_TABLES, "idempotency_record"])
 FILE_TABLES = sorted([*IDEM_TABLES, "brand_asset", "file_asset"])
 PARTNER_TABLES = sorted([*FILE_TABLES, "business_partner"])
+CUSTOMER_TABLES = sorted([*PARTNER_TABLES, "customer_profile"])
 CONFIG = Path(__file__).resolve().parents[1] / "alembic.ini"
 
 
@@ -54,7 +55,7 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == CUSTOMER_TABLES
         actor = uuid4()
         with engine.begin() as connection:
             company = connection.scalar(
@@ -76,6 +77,11 @@ def migrated_engine():
             )
         alembic("downgrade", "-1")
         assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
+                "0008_partner_tax_no"
+            )
+        alembic("downgrade", "-1")
         assert "invoice_tax_no" in {
             c["name"] for c in inspect(engine).get_columns("business_partner")
         }
@@ -92,7 +98,7 @@ def migrated_engine():
                 {"raw": "　ａｂ ｃ－１２３　"},
             )
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == CUSTOMER_TABLES
         with pytest.raises(IntegrityError), engine.begin() as connection:
             connection.execute(text("UPDATE business_partner SET tax_no = ' abc-123 '"))
         with engine.begin() as connection:
@@ -110,7 +116,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0008_partner_tax_no"
+            "0009_customer_profile"
         )
 
 

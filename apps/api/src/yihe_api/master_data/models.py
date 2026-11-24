@@ -40,6 +40,7 @@ class BusinessPartner(
     __tablename__ = "business_partner"
     __table_args__ = (
         UniqueConstraint("company_id", "code"),
+        UniqueConstraint("company_id", "id"),
         Index(
             "uq_business_partner_company_tax_no",
             "company_id",
