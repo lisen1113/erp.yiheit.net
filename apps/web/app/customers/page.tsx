@@ -89,6 +89,11 @@ export default function Customers() {
       setPermissions(grants.data);
       const employees = await apiRequest<Schema["SalespersonOption"][]>(`${endpoint}/salespeople`, { headers });
       setSalespeople(employees.data);
+      const requestedCustomer = new URLSearchParams(window.location.search).get("id");
+      if (requestedCustomer && /^[0-9a-f-]{36}$/i.test(requestedCustomer)) {
+        const result = await apiRequest<Customer>(`${endpoint}/${requestedCustomer}`, { headers });
+        setDetail(result.data);
+      }
     } catch (err) { report(err); } finally { setBusy(false); }
   }
 

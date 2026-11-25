@@ -15,7 +15,8 @@ from yihe_api.db.models import Company
 from yihe_api.db.session import DatabaseSettings
 from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
-from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS
+from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS, SUPPLIERS
+from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.rbac.bootstrap import seed_roles
 from yihe_api.rbac.models import Role, RolePermission, UserRole
 
@@ -225,7 +226,34 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
         ):
             raise ValueError("Fixed customer profile ID is not owned by seed")
     db.flush()
+    for party_code, (supplier_no, kind) in SUPPLIERS.items():
+        profile_id = seed_id("supplier_profile", party_code)
+        partner_id = seed_id("business_partner", party_code)
+        supplier = db.get(SupplierProfile, profile_id)
+        if supplier is None:
+            db.add(
+                SupplierProfile(
+                    id=profile_id,
+                    company_id=company.id,
+                    business_partner_id=partner_id,
+                    supplier_no=supplier_no,
+                    supplier_type=kind,
+                    buyer_id=seed_id("employee", "E007"),
+                    is_synthetic=True,
+                    created_by=ACTOR_ID,
+                    updated_by=ACTOR_ID,
+                )
+            )
+        elif (
+            supplier.company_id != company.id
+            or supplier.business_partner_id != partner_id
+            or not supplier.is_synthetic
+            or supplier.created_by != ACTOR_ID
+        ):
+            raise ValueError("Fixed supplier profile ID is not owned by seed")
+    db.flush()
     return {
+        "supplier_profile": len(SUPPLIERS),
         "customer_profile": len(CUSTOMERS),
         "business_partner": len(PARTNERS),
         "company": 1,
@@ -265,6 +293,19 @@ def seed_reset(db: Session) -> bool:
         ):
             raise ValueError("Reset cannot remove non-seed or modified customer profiles")
         db.delete(profile)
+    db.flush()
+    supplier_ids = {seed_id("supplier_profile", code) for code in SUPPLIERS}
+    for supplier in db.scalars(
+        select(SupplierProfile).where(SupplierProfile.company_id == company.id)
+    ):
+        if (
+            supplier.id not in supplier_ids
+            or not supplier.is_synthetic
+            or supplier.created_by != ACTOR_ID
+            or supplier.version_no != 1
+        ):
+            raise ValueError("Reset cannot remove non-seed or modified supplier profiles")
+        db.delete(supplier)
     db.flush()
     db.execute(delete(UserRole).where(UserRole.company_id == company.id))
     db.execute(delete(RolePermission).where(RolePermission.role_id.in_([r.id for r in roles])))

@@ -11094,6 +11094,1982 @@
           }
         }
       }
+    },
+    "/api/v1/suppliers/import-template/{file_format}": {
+      "get": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Get Template",
+        "operationId": "getSupplierImportTemplate",
+        "parameters": [
+          {
+            "name": "file_format",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "csv",
+                "xlsx"
+              ],
+              "type": "string",
+              "title": "File Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers/import": {
+      "post": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Import Suppliers",
+        "operationId": "importSuppliers",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportFile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers": {
+      "get": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "List Suppliers",
+        "operationId": "listSuppliers",
+        "parameters": [
+          {
+            "name": "supplier_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supplier No"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Name"
+            }
+          },
+          {
+            "name": "tax_no",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tax No"
+            }
+          },
+          {
+            "name": "buyer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Buyer Id"
+            }
+          },
+          {
+            "name": "supplier_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "DISTRIBUTOR",
+                    "HARDWARE",
+                    "SOFTWARE_SERVICE",
+                    "GENERAL"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supplier Type"
+            }
+          },
+          {
+            "name": "active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Active"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "supplier_no",
+                "name",
+                "updated_at"
+              ],
+              "type": "string",
+              "default": "supplier_no",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "descending",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Descending"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000000,
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 25,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Create Supplier",
+        "operationId": "createSupplier",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers/buyers": {
+      "get": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Buyers",
+        "operationId": "listSupplierBuyers",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100,
+              "default": "",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BuyerOption"
+                  },
+                  "title": "Response Listsupplierbuyers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers/{id}": {
+      "get": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Get Supplier",
+        "operationId": "getSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "reveal_bank_account",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Reveal Bank Account"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Update Supplier",
+        "operationId": "updateSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers/{id}/disable": {
+      "post": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Disable Supplier",
+        "operationId": "disableSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierDisable"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/suppliers/{id}/enable": {
+      "post": {
+        "tags": [
+          "suppliers"
+        ],
+        "summary": "Enable Supplier",
+        "operationId": "enableSupplier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierVersion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求格式有误。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "请登录后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "你没有权限执行此操作。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "找不到请求的资源。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "此资源不支持该请求方法。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "操作与当前状态冲突，请刷新后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "请检查填写的字段。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "系统暂时无法处理此请求，请稍后重试。",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "其他错误响应",
+            "headers": {
+              "X-Request-ID": {
+                "description": "请求追踪 ID",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11485,6 +13461,25 @@
           "is_active"
         ],
         "title": "BrandView"
+      },
+      "BuyerOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "BuyerOption"
       },
       "Category": {
         "type": "string",
@@ -12225,6 +14220,9 @@
           "CONFLICT",
           "BUSINESS_PARTNER_TAX_NO_CONFLICT",
           "CUSTOMER_IMPORT_PARTNER_MISMATCH",
+          "SUPPLIER_NO_CONFLICT",
+          "SUPPLIER_UNAVAILABLE",
+          "SUPPLIER_IMPORT_PARTNER_MISMATCH",
           "CUSTOMER_NO_CONFLICT",
           "CUSTOMER_UNAVAILABLE",
           "VERSION_CONFLICT",
@@ -13863,6 +15861,724 @@
           "DELETED_FROM_STORAGE"
         ],
         "title": "State"
+      },
+      "SupplierCreate": {
+        "properties": {
+          "supplier_no": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Supplier No"
+          },
+          "supplier_type": {
+            "type": "string",
+            "enum": [
+              "DISTRIBUTOR",
+              "HARDWARE",
+              "SOFTWARE_SERVICE",
+              "GENERAL"
+            ],
+            "title": "Supplier Type",
+            "default": "GENERAL"
+          },
+          "buyer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Buyer Id"
+          },
+          "delivery_or_pickup_notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Or Pickup Notes"
+          },
+          "payment_term_days": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Payment Term Days",
+            "default": 0
+          },
+          "default_contact_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Name"
+          },
+          "default_contact_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Phone"
+          },
+          "default_contact_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Email"
+          },
+          "business_partner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Partner Id"
+          },
+          "partner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SupplierPartnerCreate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "supplier_no",
+          "buyer_id"
+        ],
+        "title": "SupplierCreate"
+      },
+      "SupplierDisable": {
+        "properties": {
+          "version_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version No"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "supplier_request",
+              "duplicate",
+              "inactive",
+              "other"
+            ],
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version_no",
+          "reason"
+        ],
+        "title": "SupplierDisable"
+      },
+      "SupplierPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierView"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "SupplierPage"
+      },
+      "SupplierPartnerCreate": {
+        "properties": {
+          "short_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Short Name"
+          },
+          "unified_social_credit_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unified Social Credit Code"
+          },
+          "taxpayer_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Taxpayer Type"
+          },
+          "tax_registration_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Registration No"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 254
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "registered_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registered Address"
+          },
+          "business_address": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Address"
+          },
+          "invoice_title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Title"
+          },
+          "tax_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax No"
+          },
+          "invoice_address_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Address Phone"
+          },
+          "invoice_bank_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Bank Name"
+          },
+          "invoice_bank_account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Bank Account"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "credit_limit": {
+            "type": "string",
+            "title": "Credit Limit",
+            "default": "0.00"
+          },
+          "payment_terms_days": {
+            "type": "integer",
+            "maximum": 2147483647.0,
+            "minimum": 0.0,
+            "title": "Payment Terms Days",
+            "default": 0
+          },
+          "currency_code": {
+            "type": "string",
+            "const": "CNY",
+            "title": "Currency Code",
+            "default": "CNY"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "SupplierPartnerCreate"
+      },
+      "SupplierPatch": {
+        "properties": {
+          "version_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version No"
+          },
+          "supplier_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier No"
+          },
+          "supplier_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DISTRIBUTOR",
+                  "HARDWARE",
+                  "SOFTWARE_SERVICE",
+                  "GENERAL"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Type"
+          },
+          "buyer_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Buyer Id"
+          },
+          "delivery_or_pickup_notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Or Pickup Notes"
+          },
+          "payment_term_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 2147483647.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Term Days"
+          },
+          "default_contact_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Name"
+          },
+          "default_contact_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Phone"
+          },
+          "default_contact_email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Email"
+          },
+          "partner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PartnerEdit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version_no"
+        ],
+        "title": "SupplierPatch"
+      },
+      "SupplierReceipt": {
+        "properties": {
+          "resource_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Resource Id"
+          },
+          "resource_type": {
+            "type": "string",
+            "const": "supplier_profile",
+            "title": "Resource Type"
+          },
+          "status": {
+            "type": "string",
+            "const": "completed",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_id",
+          "resource_type",
+          "status"
+        ],
+        "title": "SupplierReceipt"
+      },
+      "SupplierVersion": {
+        "properties": {
+          "version_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version No"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version_no"
+        ],
+        "title": "SupplierVersion"
+      },
+      "SupplierView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "company_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Company Id"
+          },
+          "business_partner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Business Partner Id"
+          },
+          "supplier_no": {
+            "type": "string",
+            "title": "Supplier No"
+          },
+          "supplier_type": {
+            "type": "string",
+            "enum": [
+              "DISTRIBUTOR",
+              "HARDWARE",
+              "SOFTWARE_SERVICE",
+              "GENERAL"
+            ],
+            "title": "Supplier Type"
+          },
+          "buyer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Buyer Id"
+          },
+          "buyer_name": {
+            "type": "string",
+            "title": "Buyer Name"
+          },
+          "delivery_or_pickup_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivery Or Pickup Notes"
+          },
+          "payment_term_days": {
+            "type": "integer",
+            "title": "Payment Term Days"
+          },
+          "default_contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Name"
+          },
+          "default_contact_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Phone"
+          },
+          "default_contact_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Contact Email"
+          },
+          "customer_profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Profile Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "is_available": {
+            "type": "boolean",
+            "title": "Is Available"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Created By"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Updated By"
+          },
+          "partner": {
+            "$ref": "#/components/schemas/PartnerView"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "company_id",
+          "business_partner_id",
+          "supplier_no",
+          "supplier_type",
+          "buyer_id",
+          "buyer_name",
+          "delivery_or_pickup_notes",
+          "payment_term_days",
+          "default_contact_name",
+          "default_contact_phone",
+          "default_contact_email",
+          "is_active",
+          "is_available",
+          "version_no",
+          "created_at",
+          "created_by",
+          "updated_at",
+          "updated_by",
+          "partner"
+        ],
+        "title": "SupplierView"
       },
       "Ticket": {
         "properties": {

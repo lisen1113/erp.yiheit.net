@@ -15,6 +15,7 @@ from yihe_api.rbac.policy import (
     HIGH_PERMISSIONS,
     PARTNER_GRANTS,
     PERMISSIONS,
+    SUPPLIER_GRANTS,
     SYSTEM_ADMIN,
     SYSTEM_ROLES,
 )
@@ -55,7 +56,10 @@ def seed_roles(db: Session, company_id: UUID, actor_id: UUID) -> dict[str, Role]
         db.add_all(
             RolePermission(role_id=role.id, permission_id=permissions[p].id, granted_by=actor_id)
             for p in sorted(
-                grants | PARTNER_GRANTS.get(code, set()) | CUSTOMER_GRANTS.get(code, set())
+                grants
+                | PARTNER_GRANTS.get(code, set())
+                | CUSTOMER_GRANTS.get(code, set())
+                | SUPPLIER_GRANTS.get(code, set())
             )
         )
         roles[code] = role

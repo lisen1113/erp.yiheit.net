@@ -27,6 +27,7 @@ from yihe_api.master_data.schemas import (
     PartnerVersion,
     PartnerView,
 )
+from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.rbac.policy import Principal, Scope, scope_filters
 from yihe_api.rbac.router import Current
 
@@ -318,6 +319,17 @@ def mutate(
                 select(CustomerProfile.id).where(
                     CustomerProfile.company_id == row.company_id,
                     CustomerProfile.business_partner_id == row.id,
+                )
+            )
+            is not None
+        ):
+            raise FinalFailure(ErrorCode.CONFLICT)
+        if (
+            updates.get("partner_type") == "CUSTOMER"
+            and session.scalar(
+                select(SupplierProfile.id).where(
+                    SupplierProfile.company_id == row.company_id,
+                    SupplierProfile.business_partner_id == row.id,
                 )
             )
             is not None

@@ -17,12 +17,14 @@ from yihe_api.db.models import Company
 from yihe_api.dev_seed import COMPANY_ID, EPOCH, PEOPLE, seed_id
 from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
+from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
 from yihe_api.rbac.policy import (
     CUSTOMER_GRANTS,
     PARTNER_GRANTS,
     PERMISSIONS,
     SOD_ACTIONS,
+    SUPPLIER_GRANTS,
     SYSTEM_ROLES,
 )
 
@@ -40,6 +42,7 @@ def snapshot():
                 UserRole,
                 BusinessPartner,
                 CustomerProfile,
+                SupplierProfile,
             )
         }
         records["role_permission"] = tuple(
@@ -81,6 +84,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
         "company": 1,
         "business_partner": 14,
         "customer_profile": 10,
+        "supplier_profile": 5,
         "employee": 9,
         "app_user": 9,
         "role": 8,
@@ -90,7 +94,12 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
     }
     assert counts["permission"] == len(PERMISSIONS)
     assert counts["role_permission"] == sum(
-        len(role[3] | PARTNER_GRANTS.get(code, set()) | CUSTOMER_GRANTS.get(code, set()))
+        len(
+            role[3]
+            | PARTNER_GRANTS.get(code, set())
+            | CUSTOMER_GRANTS.get(code, set())
+            | SUPPLIER_GRANTS.get(code, set())
+        )
         for code, role in SYSTEM_ROLES.items()
     )
     with session_factory()() as db:
@@ -99,6 +108,17 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
         assert {p.customer_type for p in profiles} >= {"standard", "credit", "prepaid", "dual"}
         assert not next(p for p in profiles if p.customer_no == "C09").is_active
         assert next(p for p in profiles if p.customer_no == "C10").business_partner_id == (
+            seed_id("business_partner", "PARTY-DUAL")
+        )
+        suppliers = list(db.scalars(select(SupplierProfile)))
+        assert len(suppliers) == 5 and all(row.is_synthetic for row in suppliers)
+        assert {row.supplier_type for row in suppliers} == {
+            "HARDWARE",
+            "DISTRIBUTOR",
+            "SOFTWARE_SERVICE",
+            "GENERAL",
+        }
+        assert next(row for row in suppliers if row.supplier_no == "V05").business_partner_id == (
             seed_id("business_partner", "PARTY-DUAL")
         )
         partners = list(db.scalars(select(BusinessPartner)))
