@@ -88,6 +88,24 @@ def migrated_engine():
                 """),
                 {"company": company, "actor": actor},
             )
+        alembic("upgrade", "head")
+        with engine.begin() as connection:
+            connection.execute(
+                text("""
+                    INSERT INTO product_category
+                        (company_id, code, name, normalized_name, level, path,
+                         created_by, updated_by)
+                    VALUES (:company, 'ROUNDTRIP', 'Synthetic category', 'synthetic category',
+                            0, '/synthetic', :actor, :actor)
+                """),
+                {"company": company, "actor": actor},
+            )
+        with pytest.raises(subprocess.CalledProcessError):
+            alembic("downgrade", "-1")
+        with engine.begin() as connection:
+            assert connection.scalar(text("SELECT count(*) FROM product_category")) == 1
+            connection.execute(text("DELETE FROM product_category WHERE code = 'ROUNDTRIP'"))
+        alembic("downgrade", "0010_partner_bank_account_width")
         with engine.begin() as connection:
             connection.execute(
                 text("UPDATE business_partner SET invoice_bank_account = repeat('X', 255)")

@@ -91,8 +91,8 @@ def require(principal: Principal, action: str) -> None:
 
 def load(db: Session, company: UUID, *, lock: bool = False) -> dict[UUID, Row]:
     if lock:
-        # One lock per company makes moves, cycle checks and inherited-schema edits atomic.
-        db.scalar(select(Company.id).where(Company.id == company).with_for_update())
+        # NO KEY UPDATE serializes tree changes without conflicting with FK key-share locks.
+        db.scalar(select(Company.id).where(Company.id == company).with_for_update(key_share=True))
     return {
         row.id: row
         for row in db.scalars(

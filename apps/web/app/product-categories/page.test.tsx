@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import ProductCategories from "./page";
 
@@ -14,7 +14,8 @@ it("shows the category tree, rule designer and two-stage import controls", async
   })) });
   const getStyle = window.getComputedStyle.bind(window);
   vi.spyOn(window, "getComputedStyle").mockImplementation(node => getStyle(node));
-  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+  const commits: { key: string | null; token: string }[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const path = String(input);
     if (path.endsWith("/auth/login")) return Response.json({ status: "authenticated", access_token: "synthetic-session" });
     if (path.endsWith("/permissions")) return Response.json({
@@ -30,6 +31,14 @@ it("shows the category tree, rule designer and two-stage import controls", async
       effective_schema: { type: "object", properties: { service_region: {type: "string", title: "交付地区"} } },
       errors: {},
     });
+    if (path.endsWith("/imports/preview")) return Response.json({
+      creates: 1, updates: 0, conflicts: 0, errors: [], preview_token: "verified-preview",
+    });
+    if (path.endsWith("/imports/commit")) {
+      const values = JSON.parse(String(init?.body));
+      commits.push({ key: new Headers(init?.headers).get("Idempotency-Key"), token: values.preview_token });
+      return Response.json({ resource_id: "batch" });
+    }
     throw new Error("Unexpected request");
   }));
   render(<ProductCategories />);
@@ -43,5 +52,18 @@ it("shows the category tree, rule designer and two-stage import controls", async
   fireEvent.click(screen.getByRole("button", {name: "预览有效规则"}));
   expect(await screen.findByLabelText("交付地区")).toBeTruthy();
   expect(screen.getByLabelText("分类导入文件")).toBeTruthy();
-  expect((screen.getByRole("button", {name: "提交导入"}) as HTMLButtonElement).disabled).toBe(true);
+  const submit = screen.getByRole("button", {name: "提交导入"}) as HTMLButtonElement;
+  expect(submit.disabled).toBe(true);
+  const content = new TextEncoder().encode("code,name");
+  const file = new File([content], "categories.csv");
+  Object.defineProperty(file, "arrayBuffer", { value: async () => content.buffer });
+  fireEvent.change(screen.getByLabelText("分类导入文件"), { target: { files: [file] } });
+  fireEvent.click(screen.getByRole("button", { name: /预\s*检/ }));
+  expect(await screen.findByText(/新增 1，更新 0/)).toBeTruthy();
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  fireEvent.click(submit);
+  await waitFor(() => {
+    expect(commits[0]?.token).toBe("verified-preview");
+    expect(commits[0]?.key).toBeTruthy();
+  });
 }, 25000);
