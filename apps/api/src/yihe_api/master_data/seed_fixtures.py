@@ -30,3 +30,12 @@ CUSTOMERS = {
     "PARTY-C09": ("C09", "standard", False),
     "PARTY-DUAL": ("C10", "dual", True),
 }
+
+
+SUPPLIERS = {
+    "PARTY-V01": ("V01", "HARDWARE"),
+    "PARTY-V02": ("V02", "DISTRIBUTOR"),
+    "PARTY-V03": ("V03", "DISTRIBUTOR"),
+    "PARTY-V04": ("V04", "SOFTWARE_SERVICE"),
+    "PARTY-DUAL": ("V05", "GENERAL"),
+}
