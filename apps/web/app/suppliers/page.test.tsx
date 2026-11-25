@@ -87,6 +87,6 @@ it("opens the create form and submits edit with both versions and an idempotency
 it("shows the standard supplier import dialog", async () => {
   await login(true);
   fireEvent.click(screen.getByRole("button", {name: "导入供应商"}));
-  const dialog = await screen.findByRole("dialog", {name: "导入供应商"});
-  expect(within(dialog).getByLabelText("供应商导入文件")).toBeTruthy();
+  expect(await screen.findByLabelText("供应商导入文件")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "下载 Excel 模板" })).toBeTruthy();
 }, 25000);
