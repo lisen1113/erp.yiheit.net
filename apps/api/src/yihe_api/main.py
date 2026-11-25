@@ -9,6 +9,8 @@ from yihe_api.audit.router import router as audit_router
 from yihe_api.auth.router import router as auth_router
 from yihe_api.errors import ERROR_RESPONSES, TRACE_HEADERS, install_error_handlers
 from yihe_api.files.router import router as files_router
+from yihe_api.master_data.customer_import_router import router as customer_import_router
+from yihe_api.master_data.customer_router import router as customers_router
 from yihe_api.master_data.router import router as partners_router
 from yihe_api.rbac.router import router as rbac_router
 from yihe_api.readiness import router as readiness_router
@@ -50,3 +52,8 @@ app.include_router(files_router, prefix="/v1", include_in_schema=False)
 
 app.include_router(partners_router, prefix="/api/v1")
 app.include_router(partners_router, prefix="/v1", include_in_schema=False)
+
+app.include_router(customer_import_router, prefix="/api/v1")
+app.include_router(customer_import_router, prefix="/v1", include_in_schema=False)
+app.include_router(customers_router, prefix="/api/v1")
+app.include_router(customers_router, prefix="/v1", include_in_schema=False)

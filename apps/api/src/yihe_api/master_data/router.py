@@ -16,6 +16,7 @@ from yihe_api.audit.service import Actor, Category, audit_change
 from yihe_api.auth.router import DB
 from yihe_api.errors import ApiError, ErrorCode
 from yihe_api.idempotency.service import FinalFailure, Operation, Success, execute
+from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.master_data.schemas import (
     PartnerCreate,
@@ -311,6 +312,17 @@ def mutate(
             raise FinalFailure(ErrorCode.CONFLICT)
         if row.version_no != payload.version_no:
             raise FinalFailure(ErrorCode.VERSION_CONFLICT)
+        if (
+            updates.get("partner_type") == "SUPPLIER"
+            and session.scalar(
+                select(CustomerProfile.id).where(
+                    CustomerProfile.company_id == row.company_id,
+                    CustomerProfile.business_partner_id == row.id,
+                )
+            )
+            is not None
+        ):
+            raise FinalFailure(ErrorCode.CONFLICT)
         previous_roles = roles(row.partner_type)
         if action != "edit":
             updates["is_active"] = action == "enable"

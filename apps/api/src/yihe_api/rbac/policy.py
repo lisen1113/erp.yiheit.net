@@ -63,6 +63,12 @@ PARTNER_GRANTS = {
     "WAREHOUSE": {"business_partner.view_basic"},
     "AUDITOR": {PARTNER_VIEW},
 }
+CUSTOMER_GRANTS = {
+    "SYSTEM_ADMIN": {"customer.view", "customer.create", "customer.edit", "customer.disable"},
+    **dict.fromkeys(
+        ("MANAGEMENT", "FINANCE", "SALES_MANAGER", "SALES", "AUDITOR"), {"customer.view"}
+    ),
+}
 HIGH_PERMISSIONS = SOD_ACTIONS | {
     PARTNER_FULL,
     USER_MANAGE,
@@ -107,7 +113,7 @@ PERMISSIONS = (
         }
     )
     | HIGH_PERMISSIONS
-    | frozenset().union(*PARTNER_GRANTS.values())
+    | frozenset().union(*PARTNER_GRANTS.values(), *CUSTOMER_GRANTS.values())
 )
 SYSTEM_ADMIN = "SYSTEM_ADMIN"
 SYSTEM_ROLES = {

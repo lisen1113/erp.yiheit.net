@@ -21,6 +21,9 @@ class Field(StrEnum):
     MFA_EVENT = "mfa_event"
     BANK_LAST_FOUR = "bank_last_four"
     BANK_CHANGE = "bank_change"
+    BANK_ACCOUNT_CHANGED = "bank_account_changed"
+    PREVIOUS_CREDIT = "previous_credit"
+    CURRENT_CREDIT = "current_credit"
     ROLE_ID = "role_id"
     ACCOUNT_ID = "account_id"
     EMPLOYEE_ID = "employee_id"
@@ -41,7 +44,9 @@ class Field(StrEnum):
     REMOVED = "removed"
 
 
-BOOL_FIELDS = frozenset({Field.ACTIVE, Field.REQUIRES_MFA, Field.PASSWORD_CHANGED})
+BOOL_FIELDS = frozenset(
+    {Field.ACTIVE, Field.REQUIRES_MFA, Field.PASSWORD_CHANGED, Field.BANK_ACCOUNT_CHANGED}
+)
 UUID_FIELDS = frozenset({Field.ROLE_ID, Field.ACCOUNT_ID, Field.EMPLOYEE_ID, Field.RELATED_ID})
 SET_FIELDS = frozenset({Field.ADDED, Field.REMOVED})
 ENUM_FIELDS = {
@@ -95,6 +100,9 @@ def validate(field: Field, value: object) -> AuditValue:
         }
     ):
         return value
+    if field in {Field.PREVIOUS_CREDIT, Field.CURRENT_CREDIT} and isinstance(value, str):
+        if re.fullmatch(r"[0-9]{1,16}(?:\.[0-9]{1,2})?", value):
+            return value
     if field in BOOL_FIELDS and isinstance(value, bool):
         return value
     if field in UUID_FIELDS and isinstance(value, UUID):

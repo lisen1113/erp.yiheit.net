@@ -40,6 +40,7 @@ class BusinessPartner(
     __tablename__ = "business_partner"
     __table_args__ = (
         UniqueConstraint("company_id", "code"),
+        UniqueConstraint("company_id", "id"),
         Index(
             "uq_business_partner_company_tax_no",
             "company_id",
@@ -79,5 +80,5 @@ class BusinessPartner(
     tax_no: Mapped[str | None] = mapped_column(String(64))
     invoice_address_phone: Mapped[str | None] = mapped_column(String(500))
     invoice_bank_name: Mapped[str | None] = mapped_column(String(200))
-    invoice_bank_account: Mapped[str | None] = mapped_column(String(128))
+    invoice_bank_account: Mapped[str | None] = mapped_column(String(255))
     notes: Mapped[str | None] = mapped_column(String(2000))

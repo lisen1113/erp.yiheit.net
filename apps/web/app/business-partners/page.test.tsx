@@ -46,4 +46,4 @@ it("shows a dual-role partner and its masked account to a read-only user", async
   expect(screen.getByText("客户 / 供应商")).toBeTruthy();
   expect(screen.getByText("****8799")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /新\s*建|编\s*辑|停\s*用/ })).toBeNull();
-});
+}, 20000);

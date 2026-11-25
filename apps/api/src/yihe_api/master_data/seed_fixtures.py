@@ -16,3 +16,17 @@ PARTNERS = {
     "PARTY-V03": ("上海示例供应商03", "SUPPLIER", True, "v03@example.invalid"),
     "PARTY-V04": ("上海示例供应商04", "SUPPLIER", True, "v04@example.invalid"),
 }
+
+
+CUSTOMERS = {
+    "PARTY-C01": ("C01", "standard", True),
+    "PARTY-C02": ("C02", "credit", True),
+    "PARTY-C03": ("C03", "prepaid", True),
+    "PARTY-C04": ("C04", "standard", True),
+    "PARTY-C05": ("C05", "standard", True),
+    "PARTY-C06": ("C06", "standard", True),
+    "PARTY-C07": ("C07", "standard", True),
+    "PARTY-C08": ("C08", "standard", True),
+    "PARTY-C09": ("C09", "standard", False),
+    "PARTY-DUAL": ("C10", "dual", True),
+}
