@@ -11,6 +11,7 @@ from yihe_api.auth.security import PASSWORD_HASHER, valid_new_password
 from yihe_api.db.models import Company
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
 from yihe_api.rbac.policy import (
+    CATEGORY_GRANTS,
     CUSTOMER_GRANTS,
     HIGH_PERMISSIONS,
     PARTNER_GRANTS,
@@ -60,6 +61,7 @@ def seed_roles(db: Session, company_id: UUID, actor_id: UUID) -> dict[str, Role]
                 | PARTNER_GRANTS.get(code, set())
                 | CUSTOMER_GRANTS.get(code, set())
                 | SUPPLIER_GRANTS.get(code, set())
+                | CATEGORY_GRANTS.get(code, set())
             )
         )
         roles[code] = role

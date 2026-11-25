@@ -35,6 +35,13 @@ def users(auth_env, monkeypatch):  # noqa: F811
                 False,
                 [
                     "supplier.create",
+                    "product_category.view",
+                    "product_category.create",
+                    "product_category.edit",
+                    "product_category.move",
+                    "product_category.disable",
+                    "product_category.schema.manage",
+                    "product_category.import",
                     "supplier.import",
                     "customer.view",
                     "customer.create",
@@ -58,7 +65,7 @@ def users(auth_env, monkeypatch):  # noqa: F811
                 False,
                 ["supplier.view", "business_partner.bank_account.view_full"],
             ),
-            ("foreign", companies[1], False, ["supplier.view"]),
+            ("foreign", companies[1], False, ["supplier.view", "product_category.view"]),
             ("inactive", companies[0], False, []),
         ):
             user, _, headers = create_user(db, company, verified=verified)

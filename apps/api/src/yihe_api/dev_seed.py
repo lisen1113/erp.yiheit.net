@@ -17,6 +17,8 @@ from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS, SUPPLIERS
 from yihe_api.master_data.supplier_models import SupplierProfile
+from yihe_api.product_categories.models import ProductCategory
+from yihe_api.product_categories.seed import FIXTURE_SCHEMAS, GROUPS
 from yihe_api.rbac.bootstrap import seed_roles
 from yihe_api.rbac.models import Role, RolePermission, UserRole
 
@@ -252,8 +254,10 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
         ):
             raise ValueError("Fixed supplier profile ID is not owned by seed")
     db.flush()
+    category_count = seed_categories(db, company.id)
     return {
         "supplier_profile": len(SUPPLIERS),
+        "product_category": category_count,
         "customer_profile": len(CUSTOMERS),
         "business_partner": len(PARTNERS),
         "company": 1,
@@ -262,6 +266,43 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
         "role": len(roles),
         "user_role": len(PEOPLE),
     }
+
+
+def seed_categories(db: Session, company_id: UUID) -> int:
+    count = 0
+    for group, (name, child_names) in GROUPS.items():
+        root_id = seed_id("product_category", group)
+        for index, category_name in enumerate([name, *child_names]):
+            code = group if index == 0 else f"{group}-{index}"
+            id = seed_id("product_category", code)
+            category = db.get(ProductCategory, id)
+            if category is None:
+                db.add(
+                    ProductCategory(
+                        id=id,
+                        company_id=company_id,
+                        code=code,
+                        name=category_name,
+                        normalized_name=category_name.casefold(),
+                        parent_id=root_id if index else None,
+                        level=int(index > 0),
+                        path=f"/{root_id}/{id}" if index else f"/{id}",
+                        sort_order=index,
+                        attribute_schema=FIXTURE_SCHEMAS.get((group, index), {}),
+                        is_synthetic=True,
+                        created_by=ACTOR_ID,
+                        updated_by=ACTOR_ID,
+                    )
+                )
+                db.flush()
+            elif (
+                category.company_id != company_id
+                or not category.is_synthetic
+                or category.created_by != ACTOR_ID
+            ):
+                raise ValueError("Fixed category ID is not owned by seed")
+            count += 1
+    return count
 
 
 def seed_reset(db: Session) -> bool:
@@ -282,6 +323,29 @@ def seed_reset(db: Session) -> bool:
     roles = list(db.scalars(select(Role).where(Role.company_id == company.id)))
     if any(not row.is_system or row.created_by != ACTOR_ID for row in roles):
         raise ValueError("Reset cannot remove non-seed roles")
+    categories = list(
+        db.scalars(
+            select(ProductCategory)
+            .where(ProductCategory.company_id == company.id)
+            .order_by(ProductCategory.level.desc())
+        )
+    )
+    category_codes = {
+        group if i == 0 else f"{group}-{i}"
+        for group, (_, children) in GROUPS.items()
+        for i in range(len(children) + 1)
+    }
+    for category in categories:
+        if (
+            category.code not in category_codes
+            or category.id != seed_id("product_category", category.code)
+            or not category.is_synthetic
+            or category.created_by != ACTOR_ID
+            or category.version_no != 1
+        ):
+            raise ValueError("Reset cannot remove non-seed or modified categories")
+        db.delete(category)
+        db.flush()
     profiles = db.scalars(select(CustomerProfile).where(CustomerProfile.company_id == company.id))
     seed_profile_ids = {seed_id("customer_profile", code) for code in CUSTOMERS}
     for profile in profiles:

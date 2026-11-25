@@ -14,6 +14,7 @@ from yihe_api.master_data.customer_router import router as customers_router
 from yihe_api.master_data.router import router as partners_router
 from yihe_api.master_data.supplier_import_router import router as supplier_import_router
 from yihe_api.master_data.supplier_router import router as suppliers_router
+from yihe_api.product_categories.imports import router as product_categories_router
 from yihe_api.rbac.router import router as rbac_router
 from yihe_api.readiness import router as readiness_router
 from yihe_api.request_logs import configure_api_logging
@@ -62,3 +63,5 @@ app.include_router(customers_router, prefix="/v1", include_in_schema=False)
 
 app.include_router(supplier_import_router, prefix="/api/v1")
 app.include_router(suppliers_router, prefix="/api/v1")
+
+app.include_router(product_categories_router, prefix="/api/v1")
