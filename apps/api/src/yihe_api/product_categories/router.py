@@ -1,5 +1,7 @@
 """Category tree actions and effective schema projections."""
 
+import hashlib
+import json
 from typing import Annotated, Any, Literal
 from unicodedata import normalize
 from uuid import UUID, uuid4
@@ -318,6 +320,18 @@ def create_row(db: Session, request: Request, actor: Actor, payload: Create) -> 
     return row
 
 
+def projection(payload: Create | Version) -> dict[str, Any]:
+    result = payload.model_dump(mode="json", exclude_unset=True, exclude={"attribute_schema"})
+    if isinstance(payload, (Create, Update)) and payload.attribute_schema is not None:
+        try:
+            validate_schema(payload.attribute_schema)
+            encoded = json.dumps(payload.attribute_schema, sort_keys=True, allow_nan=False).encode()
+        except ValueError:
+            raise ApiError(ErrorCode.PRODUCT_CATEGORY_SCHEMA_INVALID) from None
+        result["schema_sha256"] = hashlib.sha256(encoded).hexdigest()
+    return result
+
+
 @router.post("", status_code=201, operation_id="createProductCategory")
 def create(
     payload: Create, request: Request, db: DB, principal: Current, key: Idempotency
@@ -334,7 +348,7 @@ def create(
         db,
         request,
         Operation(f"{MODULE}.create", MODULE, None, PATH),
-        payload.model_dump(mode="json"),
+        projection(payload),
         work,
     )
 
@@ -358,15 +372,17 @@ def update_schema(db: Session, request: Request, actor: Actor, row: Row, schema:
         row.id,
         "schema_updated",
         {
-            "added": sorted(new.keys() - old.keys()),
-            "removed": sorted(old.keys() - new.keys()),
-            "type_changed": sorted(k for k in changed if old[k]["type"] != new[k]["type"]),
-            "enum_changed": sorted(k for k in changed if old[k].get("enum") != new[k].get("enum")),
-            "required_before": before["required"],
-            "required_after": after["required"],
-            "version_before": row.schema_version,
-            "version_after": row.schema_version + 1,
-            "compatibility": compatibility(before, after),
+            "schema_added": sorted(new.keys() - old.keys()),
+            "schema_removed": sorted(old.keys() - new.keys()),
+            "schema_type_changed": sorted(k for k in changed if old[k]["type"] != new[k]["type"]),
+            "schema_enum_changed": sorted(
+                k for k in changed if old[k].get("enum") != new[k].get("enum")
+            ),
+            "schema_required_before": before["required"],
+            "schema_required_after": after["required"],
+            "schema_version_before": row.schema_version,
+            "schema_version_after": row.schema_version + 1,
+            "schema_compatibility": compatibility(before, after),
         },
     )
     row.attribute_schema = schema
@@ -436,7 +452,7 @@ def change(
         db,
         request,
         Operation(f"{MODULE}.{action}", MODULE, id, path),
-        payload.model_dump(mode="json", exclude_unset=True),
+        projection(payload),
         work,
     )
 

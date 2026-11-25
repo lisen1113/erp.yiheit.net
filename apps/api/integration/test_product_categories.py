@@ -4,13 +4,16 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from threading import Barrier
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from openpyxl import load_workbook
+from sqlalchemy import select
 from test_authorization import auth_env as auth_env
 from test_suppliers import users as users
 from test_suppliers import write
+from yihe_api.audit.models import AuditLog
+from yihe_api.auth.router import session_factory
 from yihe_api.product_categories.schema import (
     compatibility,
     effective_schema,
@@ -187,6 +190,17 @@ def test_concurrent_create_move_and_schema_update(users):  # noqa: F811
     )
     assert sorted(item.status_code for item in response) == [200, 409]
     assert client.get(f"{PATH}/{root}", headers=headers).json()["schema_version"] == 2
+    with session_factory()() as db:
+        event = db.scalars(
+            select(AuditLog).where(
+                AuditLog.entity_id == UUID(root),
+                AuditLog.action == "product_category.schema_updated",
+            )
+        ).one()
+        assert event.details["schema_version_before"] == 1
+        assert event.details["schema_version_after"] == 2
+        assert event.details["schema_added"] in (["term"], ["range"])
+        assert event.details["schema_compatibility"] == "REQUIRES_DATA_REVALIDATION"
 
 
 def test_xlsx_preview_errors_and_commit(users):  # noqa: F811

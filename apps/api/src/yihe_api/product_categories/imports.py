@@ -281,7 +281,11 @@ def preview(payload: ImportFile, request: Request, db: DB, principal: Current) -
         actor,
         actor.company_id,
         "import_previewed",
-        {"creates": report.creates, "updates": report.updates, "errors": len(report.errors)},
+        {
+            "added_count": report.creates,
+            "updated_count": report.updates,
+            "error_count": len(report.errors),
+        },
     )
     return report
 
@@ -342,7 +346,7 @@ def commit(
             actor,
             batch,
             "imported",
-            {"creates": report.creates, "updates": report.updates},
+            {"added_count": report.creates, "updated_count": report.updates},
         )
         return Success(MODULE, batch)
 
