@@ -80,6 +80,16 @@ SUPPLIER_GRANTS = {
     "PURCHASE": {"supplier.view", "supplier.create", "supplier.edit", "supplier.import"},
     **dict.fromkeys(("MANAGEMENT", "FINANCE", "AUDITOR"), {"supplier.view"}),
 }
+CATEGORY_GRANTS = {
+    "SYSTEM_ADMIN": {
+        f"product_category.{action}"
+        for action in ("view", "create", "edit", "disable", "move", "schema.manage", "import")
+    },
+    **dict.fromkeys(
+        ("MANAGEMENT", "SALES", "PURCHASE", "WAREHOUSE", "AUDITOR"),
+        {"product_category.view"},
+    ),
+}
 HIGH_PERMISSIONS = SOD_ACTIONS | {
     PARTNER_FULL,
     USER_MANAGE,
@@ -125,7 +135,10 @@ PERMISSIONS = (
     )
     | HIGH_PERMISSIONS
     | frozenset().union(
-        *PARTNER_GRANTS.values(), *CUSTOMER_GRANTS.values(), *SUPPLIER_GRANTS.values()
+        *PARTNER_GRANTS.values(),
+        *CUSTOMER_GRANTS.values(),
+        *SUPPLIER_GRANTS.values(),
+        *CATEGORY_GRANTS.values(),
     )
 )
 SYSTEM_ADMIN = "SYSTEM_ADMIN"

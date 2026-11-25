@@ -49,6 +49,9 @@ def alembic(*args: str) -> str:
 SUPPLIER_TABLES = sorted([*CUSTOMER_TABLES, "supplier_profile"])
 
 
+CATEGORY_TABLES = sorted([*SUPPLIER_TABLES, "product_category"])
+
+
 @pytest.fixture(scope="module")
 def migrated_engine():
     engine = make_engine(DatabaseSettings.from_environment())
@@ -58,11 +61,14 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == SUPPLIER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == CATEGORY_TABLES
         alembic("downgrade", "-1")
-        assert sorted(inspect(engine).get_table_names()) == CUSTOMER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == SUPPLIER_TABLES
         alembic("upgrade", "head")
         alembic("downgrade", "-1")
+        alembic("downgrade", "-1")
+        assert sorted(inspect(engine).get_table_names()) == CUSTOMER_TABLES
+        alembic("upgrade", "0010_partner_bank_account_width")
         actor = uuid4()
         with engine.begin() as connection:
             company = connection.scalar(
@@ -82,6 +88,24 @@ def migrated_engine():
                 """),
                 {"company": company, "actor": actor},
             )
+        alembic("upgrade", "head")
+        with engine.begin() as connection:
+            connection.execute(
+                text("""
+                    INSERT INTO product_category
+                        (company_id, code, name, normalized_name, level, path,
+                         created_by, updated_by)
+                    VALUES (:company, 'ROUNDTRIP', 'Synthetic category', 'synthetic category',
+                            0, '/synthetic', :actor, :actor)
+                """),
+                {"company": company, "actor": actor},
+            )
+        with pytest.raises(subprocess.CalledProcessError):
+            alembic("downgrade", "-1")
+        with engine.begin() as connection:
+            assert connection.scalar(text("SELECT count(*) FROM product_category")) == 1
+            connection.execute(text("DELETE FROM product_category WHERE code = 'ROUNDTRIP'"))
+        alembic("downgrade", "0010_partner_bank_account_width")
         with engine.begin() as connection:
             connection.execute(
                 text("UPDATE business_partner SET invoice_bank_account = repeat('X', 255)")
@@ -111,7 +135,7 @@ def migrated_engine():
             assert connection.scalar(text("SELECT invoice_bank_account FROM business_partner")) == (
                 "SYNTHETIC1234"
             )
-        alembic("downgrade", "-3")
+        alembic("downgrade", "-4")
         assert sorted(inspect(engine).get_table_names()) == PARTNER_TABLES
         with engine.connect() as connection:
             assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
@@ -134,7 +158,7 @@ def migrated_engine():
                 {"raw": "　ａｂ ｃ－１２３　"},
             )
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == SUPPLIER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == CATEGORY_TABLES
         with pytest.raises(IntegrityError), engine.begin() as connection:
             connection.execute(text("UPDATE business_partner SET tax_no = ' abc-123 '"))
         with engine.begin() as connection:
@@ -152,7 +176,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0011_supplier_profile"
+            "0012_product_category"
         )
 
 

@@ -18,8 +18,10 @@ from yihe_api.dev_seed import COMPANY_ID, EPOCH, PEOPLE, seed_id
 from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.master_data.supplier_models import SupplierProfile
+from yihe_api.product_categories.models import ProductCategory
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
 from yihe_api.rbac.policy import (
+    CATEGORY_GRANTS,
     CUSTOMER_GRANTS,
     PARTNER_GRANTS,
     PERMISSIONS,
@@ -43,6 +45,7 @@ def snapshot():
                 BusinessPartner,
                 CustomerProfile,
                 SupplierProfile,
+                ProductCategory,
             )
         }
         records["role_permission"] = tuple(
@@ -85,6 +88,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
         "business_partner": 14,
         "customer_profile": 10,
         "supplier_profile": 5,
+        "product_category": 23,
         "employee": 9,
         "app_user": 9,
         "role": 8,
@@ -99,6 +103,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
             | PARTNER_GRANTS.get(code, set())
             | CUSTOMER_GRANTS.get(code, set())
             | SUPPLIER_GRANTS.get(code, set())
+            | CATEGORY_GRANTS.get(code, set())
         )
         for code, role in SYSTEM_ROLES.items()
     )

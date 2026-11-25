@@ -42,6 +42,17 @@ class Field(StrEnum):
     IDEMPOTENCY_ACTION = "idempotency_action"
     ADDED = "added"
     REMOVED = "removed"
+    SCHEMA_ADDED = "schema_added"
+    SCHEMA_REMOVED = "schema_removed"
+    SCHEMA_TYPE_CHANGED = "schema_type_changed"
+    SCHEMA_ENUM_CHANGED = "schema_enum_changed"
+    SCHEMA_REQUIRED_BEFORE = "schema_required_before"
+    SCHEMA_REQUIRED_AFTER = "schema_required_after"
+    SCHEMA_VERSION_BEFORE = "schema_version_before"
+    SCHEMA_VERSION_AFTER = "schema_version_after"
+    SCHEMA_COMPATIBILITY = "schema_compatibility"
+    UPDATED_COUNT = "updated_count"
+    ERROR_COUNT = "error_count"
 
 
 BOOL_FIELDS = frozenset(
@@ -53,6 +64,9 @@ ENUM_FIELDS = {
     Field.STATUS: frozenset({"active", "disabled"}),
     Field.DATA_SCOPE: frozenset({"SELF", "DEPARTMENT", "COMPANY"}),
     Field.MFA_EVENT: frozenset({"setup", "enabled", "disabled", "verified", "failed"}),
+    Field.SCHEMA_COMPATIBILITY: frozenset(
+        {"BACKWARD_COMPATIBLE", "REQUIRES_DATA_REVALIDATION", "BREAKING"}
+    ),
     Field.BANK_CHANGE: frozenset({"created", "updated", "disabled"}),
 }
 
@@ -112,11 +126,37 @@ def validate(field: Field, value: object) -> AuditValue:
     if field == Field.BANK_LAST_FOUR and isinstance(value, str) and LAST_FOUR.fullmatch(value):
         return value
     if (
-        field in {Field.ITEM_COUNT, Field.ADDED_COUNT, Field.REMOVED_COUNT}
+        field
+        in {
+            Field.ITEM_COUNT,
+            Field.ADDED_COUNT,
+            Field.REMOVED_COUNT,
+            Field.UPDATED_COUNT,
+            Field.ERROR_COUNT,
+            Field.SCHEMA_VERSION_BEFORE,
+            Field.SCHEMA_VERSION_AFTER,
+        }
         and type(value) is int
         and 0 <= value <= 2**31 - 1
     ):
         return value
+    if (
+        field
+        in {
+            Field.SCHEMA_ADDED,
+            Field.SCHEMA_REMOVED,
+            Field.SCHEMA_TYPE_CHANGED,
+            Field.SCHEMA_ENUM_CHANGED,
+            Field.SCHEMA_REQUIRED_BEFORE,
+            Field.SCHEMA_REQUIRED_AFTER,
+        }
+        and isinstance(value, list)
+        and len(value) <= 64
+    ):
+        if all(
+            isinstance(key, str) and re.fullmatch(r"[a-z][a-z0-9_]{0,63}", key) for key in value
+        ):
+            return sorted(set(value))
     if field in SET_FIELDS and isinstance(value, (list, tuple)):
         if all(isinstance(item, str) for item in value):
             return permission_codes(value)
