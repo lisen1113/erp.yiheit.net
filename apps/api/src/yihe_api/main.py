@@ -56,8 +56,9 @@ app.include_router(partners_router, prefix="/api/v1")
 app.include_router(partners_router, prefix="/v1", include_in_schema=False)
 
 app.include_router(customer_import_router, prefix="/api/v1")
-app.include_router(supplier_import_router, prefix="/api/v1")
-app.include_router(suppliers_router, prefix="/api/v1")
 app.include_router(customer_import_router, prefix="/v1", include_in_schema=False)
 app.include_router(customers_router, prefix="/api/v1")
 app.include_router(customers_router, prefix="/v1", include_in_schema=False)
+
+app.include_router(supplier_import_router, prefix="/api/v1")
+app.include_router(suppliers_router, prefix="/api/v1")

@@ -3,13 +3,16 @@
 import base64
 import csv
 from io import BytesIO, StringIO
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from openpyxl import Workbook, load_workbook
+from sqlalchemy import select
 from test_suppliers import PARTNERS, PATH, write
 from test_suppliers import auth_env as auth_env
 from test_suppliers import users as users
+from yihe_api.audit.models import AuditLog
+from yihe_api.auth.router import session_factory
 
 COLUMNS = [
     "supplier_no",
@@ -116,6 +119,15 @@ def test_templates_and_import_reuse_customer_and_isolate_bad_rows(users, file_fo
     assert roster["items"][1]["partner"]["tax_no"] == "012345"
     assert roster["items"][1]["partner"]["credit_limit"] == "120.25"
     assert client.get(PARTNERS, headers=admin).json()["total"] == 2
+    with session_factory()() as db:
+        for item in roster["items"]:
+            actions = list(
+                db.scalars(select(AuditLog.action).where(AuditLog.entity_id == UUID(item["id"])))
+            )
+            assert actions.count("supplier.imported") == 1
+            assert actions.count("supplier.role_added") == int(
+                item["business_partner_id"] == supplier_id
+            )
 
 
 def test_import_authorization_validation_and_formula_rejection(users):  # noqa: F811

@@ -690,6 +690,93 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Customers */
+        get: operations["listCustomers"];
+        put?: never;
+        /** Create Customer */
+        post: operations["createCustomer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/salespeople": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Salespeople */
+        get: operations["listCustomerSalespeople"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Customer */
+        get: operations["getCustomer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Customer */
+        patch: operations["updateCustomer"];
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable Customer */
+        post: operations["disableCustomer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable Customer */
+        post: operations["enableCustomer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/suppliers/import-template/{file_format}": {
         parameters: {
             query?: never;
@@ -805,93 +892,6 @@ export interface paths {
         put?: never;
         /** Enable Supplier */
         post: operations["enableSupplier"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/customers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Customers */
-        get: operations["listCustomers"];
-        put?: never;
-        /** Create Customer */
-        post: operations["createCustomer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/customers/salespeople": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Salespeople */
-        get: operations["listCustomerSalespeople"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/customers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Customer */
-        get: operations["getCustomer"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Customer */
-        patch: operations["updateCustomer"];
-        trace?: never;
-    };
-    "/api/v1/customers/{id}/disable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Disable Customer */
-        post: operations["disableCustomer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/customers/{id}/enable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enable Customer */
-        post: operations["enableCustomer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7801,6 +7801,885 @@ export interface operations {
             };
         };
     };
+    listCustomers: {
+        parameters: {
+            query?: {
+                customer_no?: string | null;
+                name?: string | null;
+                tax_no?: string | null;
+                salesperson_id?: string | null;
+                active?: boolean;
+                sort?: "customer_no" | "name" | "updated_at";
+                descending?: boolean;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerPage"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    createCustomer: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReceipt"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listCustomerSalespeople: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalespersonOption"][];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getCustomer: {
+        parameters: {
+            query?: {
+                reveal_bank_account?: boolean;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerView"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    updateCustomer: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReceipt"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    disableCustomer: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerDisable"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReceipt"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    enableCustomer: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerReceipt"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     getSupplierImportTemplate: {
         parameters: {
             query?: never;
@@ -8822,885 +9701,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupplierReceipt"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    listCustomers: {
-        parameters: {
-            query?: {
-                customer_no?: string | null;
-                name?: string | null;
-                tax_no?: string | null;
-                salesperson_id?: string | null;
-                active?: boolean;
-                sort?: "customer_no" | "name" | "updated_at";
-                descending?: boolean;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerPage"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    createCustomer: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerReceipt"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    listCustomerSalespeople: {
-        parameters: {
-            query?: {
-                q?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SalespersonOption"][];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    getCustomer: {
-        parameters: {
-            query?: {
-                reveal_bank_account?: boolean;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerView"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    updateCustomer: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerPatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerReceipt"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    disableCustomer: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerDisable"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerReceipt"];
-                };
-            };
-            /** @description 请求格式有误。 */
-            400: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请登录后重试。 */
-            401: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 你没有权限执行此操作。 */
-            403: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 找不到请求的资源。 */
-            404: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 此资源不支持该请求方法。 */
-            405: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 操作与当前状态冲突，请刷新后重试。 */
-            409: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 请检查填写的字段。 */
-            422: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 系统暂时无法处理此请求，请稍后重试。 */
-            500: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description 其他错误响应 */
-            default: {
-                headers: {
-                    /** @description 请求追踪 ID */
-                    "X-Request-ID"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    enableCustomer: {
-        parameters: {
-            query?: never;
-            header: {
-                "Idempotency-Key": string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerVersion"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerReceipt"];
                 };
             };
             /** @description 请求格式有误。 */
