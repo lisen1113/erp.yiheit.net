@@ -10,6 +10,7 @@ from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.product_categories.models import ProductCategory
+from yihe_api.products.models import ProductSKU
 from yihe_api.rbac import models as rbac_models
 
 assert (
@@ -17,7 +18,7 @@ assert (
 )
 assert auth_models.Employee.metadata is rbac_models.Role.metadata is Base.metadata
 assert BusinessPartner.metadata is CustomerProfile.metadata is SupplierProfile.metadata
-assert SupplierProfile.metadata is ProductCategory.metadata is Base.metadata
+assert SupplierProfile.metadata is ProductCategory.metadata is ProductSKU.metadata is Base.metadata
 assert file_models.FileAsset.metadata is Base.metadata
 settings = DatabaseSettings.from_environment()
 

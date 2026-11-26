@@ -19,6 +19,7 @@ from yihe_api.master_data.seed_fixtures import CUSTOMERS, PARTNERS, SUPPLIERS
 from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.product_categories.models import ProductCategory
 from yihe_api.product_categories.seed import FIXTURE_SCHEMAS, GROUPS
+from yihe_api.products.seed import ITEMS, reset_products, seed_products
 from yihe_api.rbac.bootstrap import seed_roles
 from yihe_api.rbac.models import Role, RolePermission, UserRole
 
@@ -255,9 +256,14 @@ def seed_dev(db: Session, password: str) -> dict[str, int]:
             raise ValueError("Fixed supplier profile ID is not owned by seed")
     db.flush()
     category_count = seed_categories(db, company.id)
+    seed_products(db, company.id, ACTOR_ID)
     return {
         "supplier_profile": len(SUPPLIERS),
         "product_category": category_count,
+        "product_brand": 1,
+        "product_unit": 1,
+        "product_spu": len(ITEMS),
+        "product_sku": len(ITEMS),
         "customer_profile": len(CUSTOMERS),
         "business_partner": len(PARTNERS),
         "company": 1,
@@ -323,6 +329,7 @@ def seed_reset(db: Session) -> bool:
     roles = list(db.scalars(select(Role).where(Role.company_id == company.id)))
     if any(not row.is_system or row.created_by != ACTOR_ID for row in roles):
         raise ValueError("Reset cannot remove non-seed roles")
+    reset_products(db, company.id, ACTOR_ID)
     categories = list(
         db.scalars(
             select(ProductCategory)

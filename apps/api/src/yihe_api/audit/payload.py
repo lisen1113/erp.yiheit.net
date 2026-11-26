@@ -51,6 +51,10 @@ class Field(StrEnum):
     SCHEMA_VERSION_BEFORE = "schema_version_before"
     SCHEMA_VERSION_AFTER = "schema_version_after"
     SCHEMA_COMPATIBILITY = "schema_compatibility"
+    TRACKING_MODE_BEFORE = "tracking_mode_before"
+    TRACKING_MODE_AFTER = "tracking_mode_after"
+    MAKER_ID = "maker_id"
+    APPROVER_ID = "approver_id"
     UPDATED_COUNT = "updated_count"
     ERROR_COUNT = "error_count"
 
@@ -58,9 +62,20 @@ class Field(StrEnum):
 BOOL_FIELDS = frozenset(
     {Field.ACTIVE, Field.REQUIRES_MFA, Field.PASSWORD_CHANGED, Field.BANK_ACCOUNT_CHANGED}
 )
-UUID_FIELDS = frozenset({Field.ROLE_ID, Field.ACCOUNT_ID, Field.EMPLOYEE_ID, Field.RELATED_ID})
+UUID_FIELDS = frozenset(
+    {
+        Field.ROLE_ID,
+        Field.ACCOUNT_ID,
+        Field.EMPLOYEE_ID,
+        Field.RELATED_ID,
+        Field.MAKER_ID,
+        Field.APPROVER_ID,
+    }
+)
 SET_FIELDS = frozenset({Field.ADDED, Field.REMOVED})
 ENUM_FIELDS = {
+    Field.TRACKING_MODE_BEFORE: frozenset({"quantity", "serial", "batch", "non_stock"}),
+    Field.TRACKING_MODE_AFTER: frozenset({"quantity", "serial", "batch", "non_stock"}),
     Field.STATUS: frozenset({"active", "disabled"}),
     Field.DATA_SCOPE: frozenset({"SELF", "DEPARTMENT", "COMPANY"}),
     Field.MFA_EVENT: frozenset({"setup", "enabled", "disabled", "verified", "failed"}),
