@@ -267,11 +267,13 @@ def execute(
         row.version_no += 1
     event("created")
 
-    def reject_handler_commit(_session: Session) -> None:
-        raise RuntimeError("Idempotency handlers must not commit the outer transaction")
+    def reject_handler_commit(session: Session) -> None:
+        nested = session.get_nested_transaction()
+        if nested is None or nested is boundary:
+            raise RuntimeError("Idempotency handlers must not commit the outer transaction")
 
     try:
-        with db.begin_nested():
+        with db.begin_nested() as boundary:
             sqlalchemy_event.listen(db, "before_commit", reject_handler_commit)
             try:
                 result = work(db)

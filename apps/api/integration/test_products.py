@@ -12,7 +12,8 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.exc import DBAPIError
 from test_authorization import ORIGIN, create_company, create_user, grant
 from test_authorization import auth_env as auth_env
 from test_suppliers import write
@@ -417,3 +418,31 @@ def test_reject_reason_and_audit(catalog):
             "approver_id",
             "import_result",
         }
+
+
+def test_existing_product_conflicts_and_snapshot_immutability(catalog):
+    client, maker, reviewer = catalog
+    base, _, _ = model(catalog, "serial")
+    raw = product_file(existing=True)
+    result = upload(client, maker, raw.replace("合成型号".encode(), "改名".encode()))
+    assert result["conflicts"] == 1
+    assert result["errors"][0]["field"] == "spu_no"
+    create(client, maker, ROOT + "/skus", {**base, "sku_no": "IMPORT-0"})
+    assert upload(client, maker, raw)["errors"][0]["field"] == "sku_no"
+    fresh = raw.replace(b"IMPORT-0", b"IMPORT-NEW")
+    id = upload(client, maker, fresh)["batch_id"]
+    with pytest.raises(DBAPIError), session_factory().begin() as db:
+        db.execute(
+            text("UPDATE product_import_batch SET normalized_payload = '{}' WHERE id = :id"),
+            {"id": id},
+        )
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
+    assert batch_action(client, maker, id, "commit", 3).status_code == 200
+    with session_factory()() as db:
+        events = set(db.scalars(select(AuditLog.action).where(AuditLog.entity_id == UUID(id))))
+    assert {
+        "product.import.submitted",
+        "product.import.approved",
+        "product.import.committed",
+    } <= events
