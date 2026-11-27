@@ -103,7 +103,12 @@ PRODUCT_GRANTS = {
             "legacy_mapping.manage",
         )
     },
-    "MANAGEMENT": {"product.view", "product.tracking_mode.approve", "product.catalog.approve"},
+    "MANAGEMENT": {
+        "product.view",
+        "product.tracking_mode.approve",
+        "product.catalog.approve",
+        "product.import.approve",
+    },
     **dict.fromkeys(("SALES", "PURCHASE", "WAREHOUSE", "AUDITOR"), {"product.view"}),
 }
 HIGH_PERMISSIONS = SOD_ACTIONS | {
@@ -313,7 +318,10 @@ def assert_separation_of_duties(
     *,
     final_approver_user_id: UUID | None = None,
 ) -> None:
-    if action_code not in SOD_ACTIONS and action_code != "product.tracking_mode.approve":
+    if action_code not in SOD_ACTIONS and action_code not in {
+        "product.tracking_mode.approve",
+        "product.import.approve",
+    }:
         raise ValueError("Register the separation-of-duties action before use")
     if maker_user_id in {approver_user_id, final_approver_user_id}:
         raise ApiError(ErrorCode.SEPARATION_OF_DUTIES)

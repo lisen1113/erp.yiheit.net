@@ -1452,7 +1452,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/product-import/commit": {
+    "/api/v1/product-import/batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Batches */
+        get: operations["listProductImportBatches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detail */
+        get: operations["getProductImportBatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source */
+        get: operations["downloadProductImportSource"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit */
+        post: operations["submitProductImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve */
+        post: operations["approveProductImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject */
+        post: operations["rejectProductImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/product-import/batches/{id}/commit": {
         parameters: {
             query?: never;
             header?: never;
@@ -1565,6 +1667,15 @@ export interface components {
             source: string;
             /** Retention Class */
             retention_class: string;
+        };
+        /** BatchAction */
+        BatchAction: {
+            /** Version No */
+            version_no: number;
+            /** Preview Hash */
+            preview_hash: string;
+            /** Source File Sha256 */
+            source_file_sha256: string;
         };
         /** BrandCreate */
         BrandCreate: {
@@ -1937,7 +2048,7 @@ export interface components {
          * ErrorCode
          * @enum {string}
          */
-        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "BUSINESS_PARTNER_TAX_NO_CONFLICT" | "CUSTOMER_IMPORT_PARTNER_MISMATCH" | "SUPPLIER_NO_CONFLICT" | "SUPPLIER_UNAVAILABLE" | "SUPPLIER_IMPORT_PARTNER_MISMATCH" | "PRODUCT_CATEGORY_CODE_CONFLICT" | "PRODUCT_CATEGORY_NAME_CONFLICT" | "PRODUCT_CATEGORY_CYCLE" | "PRODUCT_CATEGORY_DISABLED" | "PRODUCT_CATEGORY_HAS_ACTIVE_CHILDREN" | "PRODUCT_CATEGORY_SCHEMA_INVALID" | "PRODUCT_IMPORT_REVIEW_PENDING" | "PRODUCT_CODE_CONFLICT" | "PRODUCT_CATEGORY_NOT_TRADABLE" | "PRODUCT_ATTRIBUTES_INVALID" | "PRODUCT_UNIT_REQUIRED" | "PRODUCT_TRACKING_MODE_LOCKED" | "CUSTOMER_NO_CONFLICT" | "CUSTOMER_UNAVAILABLE" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
+        ErrorCode: "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "BUSINESS_PARTNER_TAX_NO_CONFLICT" | "CUSTOMER_IMPORT_PARTNER_MISMATCH" | "SUPPLIER_NO_CONFLICT" | "SUPPLIER_UNAVAILABLE" | "SUPPLIER_IMPORT_PARTNER_MISMATCH" | "PRODUCT_CATEGORY_CODE_CONFLICT" | "PRODUCT_CATEGORY_NAME_CONFLICT" | "PRODUCT_CATEGORY_CYCLE" | "PRODUCT_CATEGORY_DISABLED" | "PRODUCT_CATEGORY_HAS_ACTIVE_CHILDREN" | "PRODUCT_CATEGORY_SCHEMA_INVALID" | "PRODUCT_IMPORT_SNAPSHOT_STALE" | "PRODUCT_CODE_CONFLICT" | "PRODUCT_CATEGORY_NOT_TRADABLE" | "PRODUCT_ATTRIBUTES_INVALID" | "PRODUCT_UNIT_REQUIRED" | "PRODUCT_TRACKING_MODE_LOCKED" | "CUSTOMER_NO_CONFLICT" | "CUSTOMER_UNAVAILABLE" | "VERSION_CONFLICT" | "IDEMPOTENCY_CONFLICT" | "IDEMPOTENCY_KEY_REQUIRED" | "IDEMPOTENCY_KEY_INVALID" | "IDEMPOTENCY_IN_PROGRESS" | "IDEMPOTENCY_REPLAY_FAILED" | "IDEMPOTENCY_RETRYABLE" | "VALIDATION_ERROR" | "INTERNAL_ERROR" | "HTTP_ERROR" | "FILE_INVALID" | "FILE_NOT_AVAILABLE" | "FILE_STORAGE_UNAVAILABLE" | "SELF_ESCALATION_DENIED" | "AUDIT_WRITE_FAILED" | "AUDIT_ACCESS_DENIED" | "AUDIT_EVENT_INVALID" | "AUTH_INVALID_CREDENTIALS" | "AUTH_INVALID_MFA" | "AUTH_ORIGIN_REJECTED" | "AUTH_REFRESH_REUSED" | "AUTH_PASSWORD_POLICY" | "MFA_REQUIRED" | "DATA_SCOPE_UNAVAILABLE" | "SEPARATION_OF_DUTIES";
         /** ErrorResponse */
         ErrorResponse: {
             code: components["schemas"]["ErrorCode"];
@@ -2338,6 +2449,33 @@ export interface components {
             /** Preview Token */
             preview_token?: string | null;
         };
+        /** ProductPreview */
+        ProductPreview: {
+            /** Creates */
+            creates: number;
+            /** Updates */
+            updates: number;
+            /** Conflicts */
+            conflicts: number;
+            /** Errors */
+            errors: components["schemas"]["ImportIssue"][];
+            /** Preview Token */
+            preview_token?: string | null;
+            /**
+             * New Spus
+             * @default 0
+             */
+            new_spus: number;
+            /**
+             * Existing Spu Skus
+             * @default 0
+             */
+            existing_spu_skus: number;
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Normalized Payload Hash */
+            normalized_payload_hash?: string | null;
+        };
         /** ProductVersion */
         ProductVersion: {
             /** Version No */
@@ -2359,6 +2497,17 @@ export interface components {
             resource_type: string;
             /** Status */
             status: string;
+        };
+        /** Reject */
+        Reject: {
+            /** Version No */
+            version_no: number;
+            /** Preview Hash */
+            preview_hash: string;
+            /** Source File Sha256 */
+            source_file_sha256: string;
+            /** Reason */
+            reason: string;
         };
         /** RoleAssignment */
         RoleAssignment: {
@@ -2942,24 +3091,6 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** Upload */
-        Upload: {
-            asset_type: components["schemas"]["Kind"];
-            /** Filename */
-            filename: string;
-            /** Media Type */
-            media_type: string;
-            /** Size Bytes */
-            size_bytes: number;
-            /** Sha256 */
-            sha256: string;
-            /**
-             * Sensitivity
-             * @default STANDARD
-             * @enum {string}
-             */
-            sensitivity: "STANDARD" | "SENSITIVE";
-        };
         /** UserCreate */
         UserCreate: {
             /**
@@ -3061,6 +3192,36 @@ export interface components {
             is_active: boolean;
             /** Version No */
             version_no: number;
+        };
+        /** Upload */
+        yihe_api__files__schemas__Upload: {
+            asset_type: components["schemas"]["Kind"];
+            /** Filename */
+            filename: string;
+            /** Media Type */
+            media_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Sensitivity
+             * @default STANDARD
+             * @enum {string}
+             */
+            sensitivity: "STANDARD" | "SENSITIVE";
+        };
+        /** Upload */
+        yihe_api__products__imports__Upload: {
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "csv" | "xlsx";
+            /** Content B64 */
+            content_b64: string;
+            /** Source Filename */
+            source_filename: string;
         };
     };
     responses: never;
@@ -6262,7 +6423,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Upload"];
+                "application/json": components["schemas"]["yihe_api__files__schemas__Upload"];
             };
         };
         responses: {
@@ -15883,7 +16044,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportFile"];
+                "application/json": components["schemas"]["yihe_api__products__imports__Upload"];
             };
         };
         responses: {
@@ -15893,7 +16054,753 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Preview"];
+                    "application/json": components["schemas"]["ProductPreview"];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    listProductImportBatches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    getProductImportBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    downloadProductImportSource: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    submitProductImport: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    approveProductImport: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchAction"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description 请求格式有误。 */
+            400: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请登录后重试。 */
+            401: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 你没有权限执行此操作。 */
+            403: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 找不到请求的资源。 */
+            404: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 此资源不支持该请求方法。 */
+            405: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 操作与当前状态冲突，请刷新后重试。 */
+            409: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 请检查填写的字段。 */
+            422: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 系统暂时无法处理此请求，请稍后重试。 */
+            500: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description 其他错误响应 */
+            default: {
+                headers: {
+                    /** @description 请求追踪 ID */
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    rejectProductImport: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Reject"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description 请求格式有误。 */
@@ -16003,12 +16910,14 @@ export interface operations {
             header: {
                 "Idempotency-Key": string;
             };
-            path?: never;
+            path: {
+                id: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CommitFile"];
+                "application/json": components["schemas"]["BatchAction"];
             };
         };
         responses: {

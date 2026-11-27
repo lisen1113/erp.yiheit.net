@@ -13,7 +13,7 @@ type Rule = { type: string; title?: string; default?: unknown; enum?: (string | 
 type Schema = { properties?: Record<string, Rule>; required?: string[] };
 type Category = { id: string; name: string; parent_id: string | null; display_path: string };
 type Resource = "brands" | "units" | "spus" | "skus" | "legacy-mappings";
-type ImportResult = { creates: number; errors: {row: number; field: string; message: string}[]; preview_token?: string };
+type ImportResult = { batch_id?: string; new_spus: number; existing_spu_skus: number; conflicts: number; creates: number; errors: {row: number; field: string; message: string}[]; preview_token?: string };
 const path = "/api/v1/products";
 const sections: {key: Resource | "import"; label: string}[] = [
   { key: "spus", label: "SPU" }, { key: "skus", label: "SKU" },
@@ -37,7 +37,10 @@ export default function Products() {
   const [error, setError] = useState("");
   const [file, setFile] = useState<File>();
   const [report, setReport] = useState<ImportResult>();
-  const [importBody, setImportBody] = useState<{format: string; content_b64: string}>();
+  const [batches, setBatches] = useState<Row[]>([]);
+  const [batch, setBatch] = useState<Row>();
+  const [rejectReason, setRejectReason] = useState("");
+  const [reviewed, setReviewed] = useState(false);
   const [templateCategory, setTemplateCategory] = useState<string>();
   const [form] = Form.useForm();
   const pending = useRef<{ identity: string; operation: ReturnType<typeof createIdempotentOperation> } | null>(null);
@@ -85,8 +88,12 @@ export default function Products() {
       pending.current = null;
       setEditing(undefined); setRequests(undefined);
       if (tab !== "import") await load(tab);
-      else { setReport(undefined); setFile(undefined); await Promise.all([load("spus"), load("skus")]); }
-    } catch (e) { fail(e); }
+      else {
+        await loadBatches();
+        if (batch) await openBatch(batch.id);
+        if (url.endsWith("/commit")) await Promise.all([load("spus"), load("skus")]);
+      }
+    } catch (e) { fail(e); if (tab === "import" && batch) void openBatch(batch.id).catch(fail); }
   }
 
   async function skuRules(spuId: string) {
@@ -133,16 +140,49 @@ export default function Products() {
     } else void write(`${path}/${tab}`, "POST", input);
   }
 
+  async function loadBatches() {
+    setBatches((await apiRequest<Row[]>("/api/v1/product-import/batches", {headers: headers()})).data);
+  }
+
+  async function openBatch(id: string) {
+    setReviewed(false);
+    setRejectReason("");
+    setBatch((await apiRequest<Row>(`/api/v1/product-import/batches/${id}`, {headers: headers()})).data);
+  }
+
+  async function downloadSource(id: string) {
+    try {
+      const response = await fetch(`/api/v1/product-import/batches/${id}/source`, {headers: headers()});
+      if (!response.ok) throw new Error("下载原文件失败。");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a"); link.href = url;
+      link.download = String(batch?.source_filename ?? "product-import");
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (e) { fail(e); }
+  }
+
   async function preview() {
     if (!file) return;
     try {
       const format = file.name.toLowerCase().split(".").at(-1);
       if (!format || !["csv", "xlsx"].includes(format) || file.size > 256 * 1024) throw new Error("请选择不超过 256 KiB 的 Excel 或 CSV。");
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const payload = {format, content_b64: btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(""))};
-      setReport((await apiRequest<ImportResult>("/api/v1/product-import/preview", {method: "POST", headers: headers(), body: JSON.stringify(payload)})).data);
-      setImportBody(payload);
+      const payload = {format, source_filename: file.name, content_b64: btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(""))};
+      const result = (await apiRequest<ImportResult>("/api/v1/product-import/preview", {method: "POST", headers: headers(), body: JSON.stringify(payload)})).data;
+      setReport(result);
+      await loadBatches();
+      if (result.batch_id) await openBatch(result.batch_id);
     } catch (e) { fail(e); }
+  }
+
+  async function batchCommand(action: "submit" | "approve" | "reject" | "commit") {
+    if (!batch) return;
+    await write(`/api/v1/product-import/batches/${batch.id}/${action}`, "POST", {
+      version_no: batch.version_no, preview_hash: batch.preview_hash,
+      source_file_sha256: batch.source_file_sha256,
+      ...(action === "reject" ? {reason: rejectReason.trim()} : {}),
+    });
   }
 
   async function template(format: "xlsx" | "csv") {
@@ -183,27 +223,55 @@ export default function Products() {
     </Form> : <>
       <Button onClick={() => void auth.logout().catch(fail).finally(() => {
         setGrants(undefined); setData({}); setEditing(undefined); setRequests(undefined);
-        setReport(undefined); setFile(undefined); setImportBody(undefined); pending.current = null;
+        setReport(undefined); setFile(undefined); setBatch(undefined); pending.current = null;
       })}>退出</Button>
-      <Tabs activeKey={tab} items={sections.filter(item => item.key === "import" ? can("import") :
+      <Tabs activeKey={tab} items={sections.filter(item => item.key === "import" ? (can("import") || can("import.approve")) :
         item.key !== "legacy-mappings" || can("legacy_mapping.manage"))} onChange={key => {
         const section = key as Resource | "import"; setTab(section); setEditing(undefined); setRequests(undefined);
         if (section !== "import") void load(section).catch(fail);
+        else void loadBatches().catch(fail);
       }} />
       {tab === "import" ? <Card title="标准商品导入">
-        <Space wrap>
+        {can("import") && <Space wrap>
           <Select aria-label="模板分类" options={leaves} value={templateCategory} onChange={setTemplateCategory} />
           <Button disabled={!templateCategory} onClick={() => void template("xlsx")}>下载 Excel 模板</Button>
           <Button disabled={!templateCategory} onClick={() => void template("csv")}>下载 CSV 模板</Button>
-          <Input aria-label="商品导入文件" type="file" accept=".xlsx,.csv" onChange={event => {setFile(event.target.files?.[0]);setReport(undefined);setImportBody(undefined);}} />
+          <Input aria-label="商品导入文件" type="file" accept=".xlsx,.csv" onChange={event => {
+            setFile(event.target.files?.[0]); setReport(undefined); setBatch(undefined);
+          }} />
           <Button disabled={!file} onClick={() => void preview()}>预检</Button>
-          <Button disabled={!report?.preview_token || !importBody} onClick={() => {
-            if (importBody && report?.preview_token && window.confirm("确认提交商品主数据？")) {
-              void write("/api/v1/product-import/commit", "POST", {...importBody, preview_token: report.preview_token});
-            }
-          }}>提交导入</Button>
-        </Space>
-        {report && <ul>{report.errors.map((row, index) => <li key={index}>第 {row.row} 行 · {row.field} · {row.message}</li>)}</ul>}
+        </Space>}
+        {report && <>
+          <Typography.Paragraph>新 SPU {report.new_spus} · 新 SKU {report.creates} · 已有 SPU 下的 SKU {report.existing_spu_skus} · 冲突 {report.conflicts}</Typography.Paragraph>
+          <ul>{report.errors.map((row, index) => <li key={index}>第 {row.row} 行 · {row.field} · {row.message}</li>)}</ul>
+        </>}
+        <Table<Row> rowKey="id" dataSource={batches} columns={[
+          {title: "文件", dataIndex: "source_filename"}, {title: "状态", dataIndex: "status"},
+          {title: "SKU", dataIndex: "sku_count"},
+          {title: "操作", render: (_, row) => <Button onClick={() => void openBatch(row.id).catch(fail)}>查看批次</Button>},
+        ]} />
+        {batch && <Card title={`批次 ${String(batch.status)}`}>
+          <Typography.Paragraph>文件 SHA-256 {String(batch.source_file_sha256)}</Typography.Paragraph>
+          <Typography.Paragraph>新 SPU {String(batch.spu_count)} · 新 SKU {String(batch.sku_count)} · 已有 SPU 下的 SKU {String(batch.existing_spu_sku_count)}</Typography.Paragraph>
+          <Typography.Paragraph>提交人 {String(batch.submitted_by ?? "—")} · 审核人 {String(batch.approved_by ?? "—")}</Typography.Paragraph>
+          <Typography.Paragraph>批准时间 {String(batch.approved_at ?? "—")} · 提交结果 {String(batch.failure_code ?? batch.committed_at ?? batch.status)}</Typography.Paragraph>
+          {typeof batch.rejection_reason === "string" && <Typography.Paragraph>{batch.rejection_reason}</Typography.Paragraph>}
+          <Button onClick={() => void downloadSource(batch.id)}>下载原文件</Button>
+          <details><summary>查看冻结的标准化商品</summary><pre>{JSON.stringify(batch.normalized_payload, null, 2)}</pre></details>
+          <Space wrap>
+            {can("import") && batch.status === "PREVIEWED" && <Button onClick={() => void batchCommand("submit")}>提交审核</Button>}
+            {can("import.approve") && batch.status === "SUBMITTED" && <>
+              <Checkbox checked={reviewed} onChange={e => setReviewed(e.target.checked)}>已核对冻结快照</Checkbox>
+              <Button type="primary" disabled={!reviewed} onClick={() => void batchCommand("approve")}>批准</Button>
+              <Input aria-label="驳回原因" value={rejectReason} maxLength={500} onChange={e => setRejectReason(e.target.value)} />
+              <Button danger disabled={!rejectReason.trim()} onClick={() => void batchCommand("reject")}>驳回</Button>
+            </>}
+            {can("import") && can("create") && batch.status === "APPROVED" &&
+              <Button type="primary" onClick={() => {
+                if (window.confirm("确认发布冻结商品批次？")) void batchCommand("commit");
+              }}>发布商品</Button>}
+          </Space>
+        </Card>}
       </Card> : <>
         {(tab === "legacy-mappings" ? can("legacy_mapping.manage") : can("create")) && <Button onClick={() => open(null)}>新建</Button>}
         <Table<Row> rowKey="id" dataSource={data[tab] ?? []} columns={[

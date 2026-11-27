@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKeyConstraint,
     Index,
+    LargeBinary,
     String,
     Text,
     UniqueConstraint,
@@ -165,3 +166,36 @@ class LegacyProductMap(IdentityMixin, CompanyScopeMixin, AuditMixin, Base):
     reason: Mapped[str | None] = mapped_column(String(500))
     approved_by: Mapped[UUID | None]
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ProductImportBatch(IdentityMixin, CompanyScopeMixin, AuditMixin, Base):
+    __tablename__ = "product_import_batch"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PREVIEWED', 'SUBMITTED', 'APPROVED', 'REJECTED', 'COMMITTED', 'FAILED')",
+            name="status",
+        ),
+        CheckConstraint(
+            "approved_by IS NULL OR approved_by IS DISTINCT FROM submitted_by", name="independent"
+        ),
+    )
+
+    source_file_sha256: Mapped[str] = mapped_column(String(64))
+    source_filename: Mapped[str] = mapped_column(String(180))
+    source_format: Mapped[str] = mapped_column(String(8))
+    source_file: Mapped[bytes] = mapped_column(LargeBinary)
+    preview_hash: Mapped[str] = mapped_column(String(64))
+    normalized_payload_hash: Mapped[str] = mapped_column(String(64))
+    normalized_payload: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    row_count: Mapped[int]
+    spu_count: Mapped[int]
+    sku_count: Mapped[int]
+    existing_spu_sku_count: Mapped[int]
+    status: Mapped[str] = mapped_column(String(16), server_default="PREVIEWED")
+    submitted_by: Mapped[UUID | None]
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    approved_by: Mapped[UUID | None]
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    committed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(String(500))
+    failure_code: Mapped[str | None] = mapped_column(String(64))

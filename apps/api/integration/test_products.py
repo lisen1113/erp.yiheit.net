@@ -2,10 +2,12 @@
 
 import base64
 import csv
+import hashlib
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 from secrets import token_urlsafe
 from threading import Barrier
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,8 +15,10 @@ from test_authorization import ORIGIN, create_company, create_user, grant
 from test_authorization import auth_env as auth_env
 from test_suppliers import write
 from yihe_api.auth.router import session_factory
+from yihe_api.errors import ErrorCode
+from yihe_api.idempotency.service import FinalFailure
 from yihe_api.main import app
-from yihe_api.products import tracking
+from yihe_api.products import service, tracking
 from yihe_api.products.imports import COLUMNS
 
 ROOT = "/api/v1/products"
@@ -37,6 +41,7 @@ def catalog(monkeypatch, auth_env):  # noqa: F811
                     "product.edit",
                     "product.disable",
                     "product.import",
+                    "product.import.approve",
                     "product.legacy_mapping.manage",
                     "product.tracking_mode.change",
                     "product.tracking_mode.approve",
@@ -47,7 +52,12 @@ def catalog(monkeypatch, auth_env):  # noqa: F811
             ),
             (
                 reviewer,
-                ["product.view", "product.tracking_mode.approve", "product.catalog.approve"],
+                [
+                    "product.view",
+                    "product.tracking_mode.approve",
+                    "product.catalog.approve",
+                    "product.import.approve",
+                ],
             ),
         ):
             for key in keys:
@@ -198,41 +208,144 @@ def test_legacy_many_to_one_and_manual_confirmation(catalog):
     assert len(client.get(ROOT + "/skus", headers=maker).json()) == 1
 
 
-def test_import_preview_rolls_back_and_blocks_unreviewed_commit(catalog):
-    client, maker, _ = catalog
-    _, cat, _ = model(catalog, "serial")
-    root = "/api/v1/product-import"
-    for format in ("csv", "xlsx"):
-        result = client.get(f"{root}/templates/{cat}", headers=maker, params={"format": format})
-        assert result.status_code == 200, result.text
+def product_file(count=1, *, existing=False):
     output = StringIO()
     writer = csv.DictWriter(output, fieldnames=COLUMNS)
     writer.writeheader()
-    writer.writerow(
-        {
-            "category_code": "HARDWARE",
-            "brand_code": "SYN",
-            "spu_no": "MODEL",
-            "spu_name": "合成型号",
-            "sku_no": "IMPORT",
-            "approved_name_cn": "合成导入配置",
-            "spec_name": "合成规格",
-            "attributes": '{"capacity":3}',
-        }
+    for index in range(count):
+        code = "MODEL" if existing else f"IMPORT-SPU-{index // 4}"
+        writer.writerow(
+            {
+                "category_code": "HARDWARE",
+                "brand_code": "SYN",
+                "spu_no": code,
+                "spu_name": "合成型号" if existing else code,
+                "sku_no": f"IMPORT-{index}",
+                "approved_name_cn": "合成导入配置",
+                "spec_name": "合成规格",
+                "attributes": '{"capacity":3}',
+            }
+        )
+    return output.getvalue().encode()
+
+
+IMPORT = "/api/v1/product-import"
+
+
+def upload(client, maker, raw):
+    result = client.post(
+        IMPORT + "/preview",
+        headers=maker,
+        json={
+            "source_filename": "synthetic.csv",
+            "format": "csv",
+            "content_b64": base64.b64encode(raw).decode(),
+        },
     )
+    assert result.status_code == 200, result.text
+    return result.json()
+
+
+def batch_action(client, headers, id, action, version, *, key=None, **extra):
+    url = f"{IMPORT}/batches/{id}"
+    batch = client.get(url, headers=headers).json()
     payload = {
-        "format": "csv",
-        "content_b64": base64.b64encode(output.getvalue().encode()).decode(),
+        "version_no": version,
+        "preview_hash": batch["preview_hash"],
+        "source_file_sha256": batch["source_file_sha256"],
+        **extra,
     }
-    result = client.post(root + "/preview", headers=maker, json=payload)
-    assert result.status_code == 200 and result.json()["creates"] == 1, result.text
+    return write(client, headers, "POST", f"{url}/{action}", payload, key)
+
+
+@pytest.mark.parametrize("count", [1, 200])
+def test_frozen_import_batch(catalog, count):
+    client, maker, reviewer = catalog
+    _, cat, _ = model(catalog, "serial")
+    for format in ("csv", "xlsx"):
+        result = client.get(f"{IMPORT}/templates/{cat}", headers=maker, params={"format": format})
+        assert result.status_code == 200, result.text
+    raw = product_file(count)
+    result = upload(client, maker, raw)
+    id = result["batch_id"]
+    assert not result["errors"] and result["new_spus"] == (count + 3) // 4, result
     assert client.get(ROOT + "/skus", headers=maker).json() == []
-    commit = write(
+    if count == 1:
+        repeat = upload(client, maker, raw)
+        assert repeat["normalized_payload_hash"] == result["normalized_payload_hash"]
+        assert batch_action(client, maker, id, "commit", 1).status_code == 409
+        assert (
+            batch_action(client, maker, id, "submit", 1, source_file_sha256="0" * 64).status_code
+            == 409
+        )
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, maker, id, "approve", 2).status_code == 403
+    assert client.get(f"{IMPORT}/batches/{id}/source", headers=reviewer).content == raw
+    assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
+    key = str(uuid4())
+    result = batch_action(client, maker, id, "commit", 3, key=key)
+    assert result.status_code == 200, result.text
+    assert (
+        batch_action(client, maker, id, "commit", 3, key=key).headers["Idempotency-Replayed"]
+        == "true"
+    )
+    assert batch_action(client, maker, id, "commit", 4, key=key).status_code == 409
+    batch = client.get(f"{IMPORT}/batches/{id}", headers=reviewer).json()
+    assert batch["status"] == "COMMITTED" and batch["sku_count"] == count
+    assert batch["source_file_sha256"] == hashlib.sha256(raw).hexdigest()
+    assert len(client.get(ROOT + "/skus?limit=200", headers=maker).json()) == count
+
+
+def test_existing_spu_and_stale_category(catalog):
+    client, maker, reviewer = catalog
+    _, cat, _ = model(catalog, "serial")
+    result = upload(client, maker, product_file(existing=True))
+    id = result["batch_id"]
+    assert result["existing_spu_skus"] == 1 and result["new_spus"] == 0, result
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
+    changed = write(
         client,
         maker,
-        "POST",
-        root + "/commit",
-        {**payload, "preview_token": result.json()["preview_token"]},
+        "PATCH",
+        f"{CAT}/{cat}",
+        {
+            "version_no": 2,
+            "attribute_schema": {
+                "type": "object",
+                "properties": {"capacity": {"type": "integer", "minimum": 2}},
+                "required": ["capacity"],
+            },
+        },
     )
-    assert commit.status_code == 409 and commit.json()["code"] == "PRODUCT_IMPORT_REVIEW_PENDING"
+    assert changed.status_code == 200
+    response = batch_action(client, maker, id, "commit", 3)
+    assert (
+        response.status_code == 409 and response.json()["code"] == "PRODUCT_IMPORT_SNAPSHOT_STALE"
+    )
+    assert client.get(f"{IMPORT}/batches/{id}", headers=maker).json()["status"] == "FAILED"
     assert client.get(ROOT + "/skus", headers=maker).json() == []
+
+
+def test_last_sku_failure_rolls_back_all_new_products(catalog, monkeypatch):
+    client, maker, reviewer = catalog
+    model(catalog, "serial")
+    id = upload(client, maker, product_file(5))["batch_id"]
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
+    original = service.create_sku
+    calls = 0
+
+    def fail_last(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 10:  # five revalidation inserts, then fail the last real insert
+            raise FinalFailure(ErrorCode.PRODUCT_CODE_CONFLICT)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(service, "create_sku", fail_last)
+    result = batch_action(client, maker, id, "commit", 3)
+    assert result.status_code == 409 and calls == 10
+    assert len(client.get(ROOT + "/spus", headers=maker).json()) == 1
+    assert client.get(ROOT + "/skus", headers=maker).json() == []
+    assert client.get(f"{IMPORT}/batches/{id}", headers=maker).json()["status"] == "FAILED"

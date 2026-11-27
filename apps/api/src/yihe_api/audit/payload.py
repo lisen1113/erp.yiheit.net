@@ -36,6 +36,10 @@ class Field(StrEnum):
     FILE_STATUS = "file_status"
     ADDED_COUNT = "added_count"
     REMOVED_COUNT = "removed_count"
+    PREVIEW_HASH = "preview_hash"
+    SPU_COUNT = "spu_count"
+    SKU_COUNT = "sku_count"
+    IMPORT_RESULT = "import_result"
     KEY_HASH = "idempotency_key_hash"
     REQUEST_HASH = "idempotency_request_hash"
     IDEMPOTENCY_STATUS = "idempotency_status"
@@ -74,6 +78,9 @@ UUID_FIELDS = frozenset(
 )
 SET_FIELDS = frozenset({Field.ADDED, Field.REMOVED})
 ENUM_FIELDS = {
+    Field.IMPORT_RESULT: frozenset(
+        {"PREVIEWED", "SUBMITTED", "APPROVED", "REJECTED", "COMMITTED", "FAILED"}
+    ),
     Field.TRACKING_MODE_BEFORE: frozenset({"quantity", "serial", "batch", "non_stock"}),
     Field.TRACKING_MODE_AFTER: frozenset({"quantity", "serial", "batch", "non_stock"}),
     Field.STATUS: frozenset({"active", "disabled"}),
@@ -96,7 +103,7 @@ def permission_codes(values: Iterable[str]) -> list[str]:
 
 
 def validate(field: Field, value: object) -> AuditValue:
-    if field in {Field.KEY_HASH, Field.REQUEST_HASH} and isinstance(value, str):
+    if field in {Field.KEY_HASH, Field.REQUEST_HASH, Field.PREVIEW_HASH} and isinstance(value, str):
         if re.fullmatch(r"[0-9a-f]{64}", value):
             return value
     if field == Field.IDEMPOTENCY_ACTION and isinstance(value, str):
@@ -144,6 +151,8 @@ def validate(field: Field, value: object) -> AuditValue:
         field
         in {
             Field.ITEM_COUNT,
+            Field.SPU_COUNT,
+            Field.SKU_COUNT,
             Field.ADDED_COUNT,
             Field.REMOVED_COUNT,
             Field.UPDATED_COUNT,

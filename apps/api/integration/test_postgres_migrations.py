@@ -65,6 +65,9 @@ MASTER_TABLES = sorted(
 )
 
 
+BATCH_TABLES = sorted([*MASTER_TABLES, "product_import_batch"])
+
+
 @pytest.fixture(scope="module")
 def migrated_engine():
     engine = make_engine(DatabaseSettings.from_environment())
@@ -74,11 +77,13 @@ def migrated_engine():
             assert inspect(connection).get_table_names() == []
         assert len(alembic("heads").splitlines()) == 1
         alembic("upgrade", "head")
+        assert sorted(inspect(engine).get_table_names()) == BATCH_TABLES
+        alembic("downgrade", "-1")
         assert sorted(inspect(engine).get_table_names()) == MASTER_TABLES
         alembic("downgrade", "-1")
         assert sorted(inspect(engine).get_table_names()) == CATEGORY_TABLES
         alembic("upgrade", "head")
-        alembic("downgrade", "-1")
+        alembic("downgrade", "-2")
         alembic("downgrade", "-1")
         assert sorted(inspect(engine).get_table_names()) == SUPPLIER_TABLES
         alembic("upgrade", "0012_product_category")
@@ -174,7 +179,7 @@ def migrated_engine():
                 {"raw": "　ａｂ ｃ－１２３　"},
             )
         alembic("upgrade", "head")
-        assert sorted(inspect(engine).get_table_names()) == MASTER_TABLES
+        assert sorted(inspect(engine).get_table_names()) == BATCH_TABLES
         with pytest.raises(IntegrityError), engine.begin() as connection:
             connection.execute(text("UPDATE business_partner SET tax_no = ' abc-123 '"))
         with engine.begin() as connection:
@@ -192,7 +197,7 @@ def migrated_engine():
 def test_upgrade_downgrade_and_reupgrade(migrated_engine) -> None:
     with migrated_engine.connect() as connection:
         assert connection.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "0013_product_master"
+            "0014_product_import_batch"
         )
 
 
