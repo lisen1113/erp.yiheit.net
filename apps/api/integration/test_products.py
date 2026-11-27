@@ -7,19 +7,21 @@ from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 from secrets import token_urlsafe
 from threading import Barrier
-from uuid import uuid4
+from time import perf_counter
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from test_authorization import ORIGIN, create_company, create_user, grant
 from test_authorization import auth_env as auth_env
 from test_suppliers import write
+from yihe_api.audit.models import AuditLog
 from yihe_api.auth.router import session_factory
-from yihe_api.errors import ErrorCode
-from yihe_api.idempotency.service import FinalFailure
 from yihe_api.main import app
 from yihe_api.products import service, tracking
 from yihe_api.products.imports import COLUMNS
+from yihe_api.products.models import ProductBrand, ProductSPU, ProductUnit
 
 ROOT = "/api/v1/products"
 CAT = "/api/v1/product-categories"
@@ -266,7 +268,9 @@ def test_frozen_import_batch(catalog, count):
         result = client.get(f"{IMPORT}/templates/{cat}", headers=maker, params={"format": format})
         assert result.status_code == 200, result.text
     raw = product_file(count)
+    started = perf_counter()
     result = upload(client, maker, raw)
+    preview_seconds = perf_counter() - started
     id = result["batch_id"]
     assert not result["errors"] and result["new_spus"] == (count + 3) // 4, result
     assert client.get(ROOT + "/skus", headers=maker).json() == []
@@ -283,7 +287,11 @@ def test_frozen_import_batch(catalog, count):
     assert client.get(f"{IMPORT}/batches/{id}/source", headers=reviewer).content == raw
     assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
     key = str(uuid4())
+    started = perf_counter()
     result = batch_action(client, maker, id, "commit", 3, key=key)
+    commit_seconds = perf_counter() - started
+    if count == 200:
+        print(f"50 SPU + 200 SKU: Preview {preview_seconds:.2f}s, Commit {commit_seconds:.2f}s")
     assert result.status_code == 200, result.text
     assert (
         batch_action(client, maker, id, "commit", 3, key=key).headers["Idempotency-Replayed"]
@@ -336,12 +344,15 @@ def test_last_sku_failure_rolls_back_all_new_products(catalog, monkeypatch):
     original = service.create_sku
     calls = 0
 
-    def fail_last(*args, **kwargs):
+    def fail_last(db, company, actor, payload, **kwargs):
         nonlocal calls
         calls += 1
-        if calls == 10:  # five revalidation inserts, then fail the last real insert
-            raise FinalFailure(ErrorCode.PRODUCT_CODE_CONFLICT)
-        return original(*args, **kwargs)
+        if calls > 5:
+            spu = db.get_one(ProductSPU, payload.spu_id)
+            assert spu.approved_by and spu.approved_by != spu.created_by
+        if calls == 10:
+            payload = payload.model_copy(update={"sku_no": "IMPORT-0"})
+        return original(db, company, actor, payload, **kwargs)
 
     monkeypatch.setattr(service, "create_sku", fail_last)
     result = batch_action(client, maker, id, "commit", 3)
@@ -349,3 +360,60 @@ def test_last_sku_failure_rolls_back_all_new_products(catalog, monkeypatch):
     assert len(client.get(ROOT + "/spus", headers=maker).json()) == 1
     assert client.get(ROOT + "/skus", headers=maker).json() == []
     assert client.get(f"{IMPORT}/batches/{id}", headers=maker).json()["status"] == "FAILED"
+
+
+@pytest.mark.parametrize("directory", ["category", "brand", "unit"])
+def test_inactive_dependency_invalidates_snapshot(catalog, directory):
+    client, maker, reviewer = catalog
+    _, cat, defaults = model(catalog, "serial")
+    id = upload(client, maker, product_file())["batch_id"]
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, reviewer, id, "approve", 2).status_code == 200
+    if directory == "category":
+        assert (
+            write(client, maker, "POST", f"{CAT}/{cat}/disable", {"version_no": 2}).status_code
+            == 200
+        )
+    else:
+        with session_factory().begin() as db:
+            if directory == "brand":
+                brand_id = client.get(ROOT + "/brands", headers=maker).json()[0]["id"]
+                db.get_one(ProductBrand, UUID(brand_id)).is_active = False
+            else:
+                db.get_one(ProductUnit, UUID(defaults["unit_id"])).is_active = False
+    assert (
+        batch_action(client, maker, id, "commit", 3).json()["code"]
+        == "PRODUCT_IMPORT_SNAPSHOT_STALE"
+    )
+
+
+def test_reject_reason_and_audit(catalog):
+    client, maker, reviewer = catalog
+    model(catalog, "serial")
+    raw = product_file()
+    id = upload(client, maker, raw)["batch_id"]
+    assert batch_action(client, maker, id, "submit", 1).status_code == 200
+    assert batch_action(client, reviewer, id, "reject", 2).status_code == 422
+    assert batch_action(client, reviewer, id, "reject", 2, reason="需复核").status_code == 200
+    assert batch_action(client, maker, id, "commit", 3).status_code == 409
+    with session_factory()() as db:
+        entries = list(db.scalars(select(AuditLog).where(AuditLog.entity_id == UUID(id))))
+    product_events = {
+        entry.action: entry for entry in entries if entry.action.startswith("product.import.")
+    }
+    assert set(product_events) == {
+        "product.import.previewed",
+        "product.import.submitted",
+        "product.import.rejected",
+    }
+    for entry in product_events.values():
+        assert entry.details["file_sha256"] == hashlib.sha256(raw).hexdigest()
+        assert set(entry.details) <= {
+            "file_sha256",
+            "preview_hash",
+            "spu_count",
+            "sku_count",
+            "maker_id",
+            "approver_id",
+            "import_result",
+        }

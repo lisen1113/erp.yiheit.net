@@ -341,7 +341,7 @@ def process(
     return report, plan
 
 
-class Upload(ImportFile):
+class ProductImportUpload(ImportFile):
     source_filename: str = Field(min_length=1, max_length=180)
 
 
@@ -405,7 +405,9 @@ def event(
 
 
 @router.post("/preview", operation_id="previewProductImport")
-def preview(payload: Upload, request: Request, db: DB, principal: Current) -> ProductPreview:
+def preview(
+    payload: ProductImportUpload, request: Request, db: DB, principal: Current
+) -> ProductPreview:
     require(principal, "import")
     require(principal, "create")
     actor = actor_for(request)

@@ -2449,6 +2449,18 @@ export interface components {
             /** Preview Token */
             preview_token?: string | null;
         };
+        /** ProductImportUpload */
+        ProductImportUpload: {
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "csv" | "xlsx";
+            /** Content B64 */
+            content_b64: string;
+            /** Source Filename */
+            source_filename: string;
+        };
         /** ProductPreview */
         ProductPreview: {
             /** Creates */
@@ -3091,6 +3103,24 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** Upload */
+        Upload: {
+            asset_type: components["schemas"]["Kind"];
+            /** Filename */
+            filename: string;
+            /** Media Type */
+            media_type: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Sensitivity
+             * @default STANDARD
+             * @enum {string}
+             */
+            sensitivity: "STANDARD" | "SENSITIVE";
+        };
         /** UserCreate */
         UserCreate: {
             /**
@@ -3192,36 +3222,6 @@ export interface components {
             is_active: boolean;
             /** Version No */
             version_no: number;
-        };
-        /** Upload */
-        yihe_api__files__schemas__Upload: {
-            asset_type: components["schemas"]["Kind"];
-            /** Filename */
-            filename: string;
-            /** Media Type */
-            media_type: string;
-            /** Size Bytes */
-            size_bytes: number;
-            /** Sha256 */
-            sha256: string;
-            /**
-             * Sensitivity
-             * @default STANDARD
-             * @enum {string}
-             */
-            sensitivity: "STANDARD" | "SENSITIVE";
-        };
-        /** Upload */
-        yihe_api__products__imports__Upload: {
-            /**
-             * Format
-             * @enum {string}
-             */
-            format: "csv" | "xlsx";
-            /** Content B64 */
-            content_b64: string;
-            /** Source Filename */
-            source_filename: string;
         };
     };
     responses: never;
@@ -6423,7 +6423,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["yihe_api__files__schemas__Upload"];
+                "application/json": components["schemas"]["Upload"];
             };
         };
         responses: {
@@ -16044,7 +16044,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["yihe_api__products__imports__Upload"];
+                "application/json": components["schemas"]["ProductImportUpload"];
             };
         };
         responses: {

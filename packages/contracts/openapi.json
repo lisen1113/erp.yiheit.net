@@ -5377,7 +5377,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/yihe_api__files__schemas__Upload"
+                "$ref": "#/components/schemas/Upload"
               }
             }
           }
@@ -21599,7 +21599,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/yihe_api__products__imports__Upload"
+                "$ref": "#/components/schemas/ProductImportUpload"
               }
             }
           },
@@ -26037,6 +26037,38 @@
         ],
         "title": "Preview"
       },
+      "ProductImportUpload": {
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "xlsx"
+            ],
+            "title": "Format"
+          },
+          "content_b64": {
+            "type": "string",
+            "maxLength": 349528,
+            "minLength": 1,
+            "title": "Content B64"
+          },
+          "source_filename": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Source Filename"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "format",
+          "content_b64",
+          "source_filename"
+        ],
+        "title": "ProductImportUpload"
+      },
       "ProductPreview": {
         "properties": {
           "creates": {
@@ -27973,6 +28005,55 @@
         ],
         "title": "Update"
       },
+      "Upload": {
+        "properties": {
+          "asset_type": {
+            "$ref": "#/components/schemas/Kind"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "media_type": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Media Type"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "maximum": 52428800.0,
+            "exclusiveMinimum": 0.0,
+            "title": "Size Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256"
+          },
+          "sensitivity": {
+            "type": "string",
+            "enum": [
+              "STANDARD",
+              "SENSITIVE"
+            ],
+            "title": "Sensitivity",
+            "default": "STANDARD"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "asset_type",
+          "filename",
+          "media_type",
+          "size_bytes",
+          "sha256"
+        ],
+        "title": "Upload"
+      },
       "UserCreate": {
         "properties": {
           "employee_id": {
@@ -28201,87 +28282,6 @@
           "version_no"
         ],
         "title": "View"
-      },
-      "yihe_api__files__schemas__Upload": {
-        "properties": {
-          "asset_type": {
-            "$ref": "#/components/schemas/Kind"
-          },
-          "filename": {
-            "type": "string",
-            "maxLength": 180,
-            "minLength": 1,
-            "title": "Filename"
-          },
-          "media_type": {
-            "type": "string",
-            "maxLength": 128,
-            "minLength": 1,
-            "title": "Media Type"
-          },
-          "size_bytes": {
-            "type": "integer",
-            "maximum": 52428800.0,
-            "exclusiveMinimum": 0.0,
-            "title": "Size Bytes"
-          },
-          "sha256": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$",
-            "title": "Sha256"
-          },
-          "sensitivity": {
-            "type": "string",
-            "enum": [
-              "STANDARD",
-              "SENSITIVE"
-            ],
-            "title": "Sensitivity",
-            "default": "STANDARD"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "asset_type",
-          "filename",
-          "media_type",
-          "size_bytes",
-          "sha256"
-        ],
-        "title": "Upload"
-      },
-      "yihe_api__products__imports__Upload": {
-        "properties": {
-          "format": {
-            "type": "string",
-            "enum": [
-              "csv",
-              "xlsx"
-            ],
-            "title": "Format"
-          },
-          "content_b64": {
-            "type": "string",
-            "maxLength": 349528,
-            "minLength": 1,
-            "title": "Content B64"
-          },
-          "source_filename": {
-            "type": "string",
-            "maxLength": 180,
-            "minLength": 1,
-            "title": "Source Filename"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "format",
-          "content_b64",
-          "source_filename"
-        ],
-        "title": "Upload"
       }
     }
   }
