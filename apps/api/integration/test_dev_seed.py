@@ -19,12 +19,14 @@ from yihe_api.master_data.customer_models import CustomerProfile
 from yihe_api.master_data.models import BusinessPartner
 from yihe_api.master_data.supplier_models import SupplierProfile
 from yihe_api.product_categories.models import ProductCategory
+from yihe_api.products.models import ProductBrand, ProductSKU, ProductSPU, ProductUnit
 from yihe_api.rbac.models import Permission, Role, RolePermission, UserRole
 from yihe_api.rbac.policy import (
     CATEGORY_GRANTS,
     CUSTOMER_GRANTS,
     PARTNER_GRANTS,
     PERMISSIONS,
+    PRODUCT_GRANTS,
     SOD_ACTIONS,
     SUPPLIER_GRANTS,
     SYSTEM_ROLES,
@@ -46,6 +48,10 @@ def snapshot():
                 CustomerProfile,
                 SupplierProfile,
                 ProductCategory,
+                ProductBrand,
+                ProductUnit,
+                ProductSPU,
+                ProductSKU,
             )
         }
         records["role_permission"] = tuple(
@@ -89,6 +95,10 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
         "customer_profile": 10,
         "supplier_profile": 5,
         "product_category": 23,
+        "product_brand": 1,
+        "product_unit": 1,
+        "product_spu": 14,
+        "product_sku": 14,
         "employee": 9,
         "app_user": 9,
         "role": 8,
@@ -104,6 +114,7 @@ def test_dev_seed_repeat_reset_repeat_and_remote_isolation(monkeypatch, capsys):
             | CUSTOMER_GRANTS.get(code, set())
             | SUPPLIER_GRANTS.get(code, set())
             | CATEGORY_GRANTS.get(code, set())
+            | PRODUCT_GRANTS.get(code, set())
         )
         for code, role in SYSTEM_ROLES.items()
     )

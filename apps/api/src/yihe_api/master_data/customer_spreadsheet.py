@@ -72,22 +72,26 @@ def template(file_format: Format) -> bytes:
     return content.getvalue()
 
 
-def values_from_csv(data: bytes) -> list[tuple[int, tuple[object, ...], set[int]]]:
+def values_from_csv(
+    data: bytes, *, max_rows: int = MAX_ROWS
+) -> list[tuple[int, tuple[object, ...], set[int]]]:
     reader = csv.reader(StringIO(data.decode("utf-8-sig"), newline=""), strict=True)
     rows: list[tuple[int, tuple[object, ...], set[int]]] = []
     previous = 0
     try:
         for values in reader:
             rows.append((previous + 1, tuple(values), set()))
-            if len(rows) > MAX_ROWS + 1:
-                raise SpreadsheetError(previous + 1, "file", "每批最多导入 100 行。")
+            if len(rows) > max_rows + 1:
+                raise SpreadsheetError(previous + 1, "file", f"每批最多导入 {max_rows} 行。")
             previous = reader.line_num
     except csv.Error:
         raise SpreadsheetError(previous + 1, "file", "CSV 行格式无效。") from None
     return rows
 
 
-def values_from_xlsx(data: bytes) -> list[tuple[int, tuple[object, ...], set[int]]]:
+def values_from_xlsx(
+    data: bytes, *, max_rows: int = MAX_ROWS
+) -> list[tuple[int, tuple[object, ...], set[int]]]:
     with ZipFile(BytesIO(data)) as archive:
         entries = archive.infolist()
         if (
@@ -105,8 +109,8 @@ def values_from_xlsx(data: bytes) -> list[tuple[int, tuple[object, ...], set[int
         sheet.reset_dimensions()
         rows = []
         for number, cells in enumerate(sheet.iter_rows(), start=1):
-            if number > MAX_ROWS + 1:
-                raise SpreadsheetError(number, "file", "每批最多导入 100 行。")
+            if number > max_rows + 1:
+                raise SpreadsheetError(number, "file", f"每批最多导入 {max_rows} 行。")
             values = [cell.value for cell in cells]
             while values and values[-1] is None:
                 values.pop()
