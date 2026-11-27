@@ -50,6 +50,7 @@ def catalog(monkeypatch, auth_env):  # noqa: F811
                     "product.tracking_mode.approve",
                     "product_category.create",
                     "product_category.edit",
+                    "product_category.disable",
                     "product_category.schema.manage",
                 ],
             ),
